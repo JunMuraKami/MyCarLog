@@ -20,7 +20,7 @@ import java.util.Locale;
 /** Log page for fuel or maintenance: list past records, edit them, add new ones. */
 public class LogActivity extends ThemedActivity {
     public static final String EXTRA_MODE = "mode";
-    public static final int MODE_FUEL = 0, MODE_SERVICE = 1;
+    public static final int MODE_FUEL = 0, MODE_SERVICE = 1, MODE_EXPENSE = 2;
 
     private Store store;
     private int mode;
@@ -34,7 +34,8 @@ public class LogActivity extends ThemedActivity {
         super.onCreate(b);
         mode = getIntent().getIntExtra(EXTRA_MODE, MODE_FUEL);
         store = new Store(this);
-        setTitle((mode == MODE_FUEL ? "給油ログ" : "整備ログ") + " - " + store.vehicle().name);
+        setTitle((mode == MODE_FUEL ? "給油ログ" : mode == MODE_SERVICE ? "整備ログ" : "費用ログ")
+                + " - " + store.vehicle().name);
         final int pad = dp(16);
 
         LinearLayout root = new LinearLayout(this);
@@ -50,10 +51,11 @@ public class LogActivity extends ThemedActivity {
         slp.setMargins(dp(12), dp(4), dp(12), dp(4));
         root.addView(summary, slp);
 
-        if (mode == MODE_FUEL) {
+        if (mode != MODE_SERVICE) {
             LinearLayout bar = new LinearLayout(this);
             bar.setPadding(dp(8), dp(4), dp(8), 0);
-            String[] names = { "履歴", "月別", "年別" };
+            String[] names = mode == MODE_FUEL ? new String[]{ "履歴", "月別", "年別" }
+                    : new String[]{ "履歴", "年別" };
             for (int k = 0; k < names.length; k++) {
                 final int target = k;
                 Button tb = new Button(this);
@@ -81,13 +83,16 @@ public class LogActivity extends ThemedActivity {
                 t.setTextSize(15);
                 t.setTextColor(pal.gray);
                 Object o = shown.get(i);
-                if (o instanceof FuelStats.Period) {
+                if (o instanceof String) {
+                    t.setText((String) o);
+                } else if (o instanceof FuelStats.Period) {
                     FuelStats.Period q = (FuelStats.Period) o;
                     String l2 = q.line2();
                     String head = view == 1 ? q.key.replace("-", "年") + "月" : q.key + "年";
                     t.setText(head + "\n" + q.line1() + (l2.isEmpty() ? "" : "\n" + l2));
                 } else {
-                    t.setText(o instanceof Fill ? fillText((Fill) o) : serviceText((Service) o));
+                    t.setText(o instanceof Fill ? fillText((Fill) o)
+                            : o instanceof Expense ? expenseText((Expense) o) : serviceText((Service) o));
                 }
                 return t;
             }
@@ -97,6 +102,7 @@ public class LogActivity extends ThemedActivity {
             Object o = shown.get(i);
             if (o instanceof Fill) editFill((Fill) o);
             else if (o instanceof Service) editService((Service) o);
+            else if (o instanceof Expense) editExpense((Expense) o);
         });
         TextView empty = new TextView(this);
         empty.setText("記録がありません。下のボタンから追加してください。");
@@ -106,11 +112,13 @@ public class LogActivity extends ThemedActivity {
         root.addView(list, new LinearLayout.LayoutParams(-1, 0, 1f));
 
         Button add = new Button(this);
-        add.setText(mode == MODE_FUEL ? "＋ 給油を記録" : "＋ 整備を記録");
+        add.setText(mode == MODE_FUEL ? "＋ 給油を記録" : mode == MODE_SERVICE ? "＋ 整備を記録" : "＋ 費用を記録");
         add.setTextSize(16);
         pill(add, true);
         add.setOnClickListener(v -> {
-            if (mode == MODE_FUEL) editFill(null); else editService(null);
+            if (mode == MODE_FUEL) editFill(null);
+            else if (mode == MODE_SERVICE) editService(null);
+            else editExpense(null);
         });
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, dp(56));
         lp.setMargins(dp(12), dp(4), dp(12), dp(12));
@@ -143,6 +151,12 @@ public class LogActivity extends ThemedActivity {
             for (Fill f : store.fills) liters += f.liters;
             summary.setText(String.format(Locale.JAPAN, "合計: %.2f L ・ ¥%,.0f(%d回)",
                     liters, store.totalCost(), store.fills.size()));
+        } else if (mode == MODE_EXPENSE) {
+            for (int k = 0; k < tabs.size(); k++) pill(tabs.get(k), k == view);
+            if (view == 0) shown.addAll(store.expenses);
+            else shown.addAll(expenseYears());
+            summary.setText(String.format(Locale.JAPAN, "総費用: ¥%,.0f(%d件)",
+                    store.expenseCost(), store.expenses.size()));
         } else {
             shown.addAll(store.services);
             summary.setText(String.format(Locale.JAPAN, "総整備費用: ¥%,.0f(%d件)",
@@ -158,6 +172,36 @@ public class LogActivity extends ThemedActivity {
                 "%s   %,.0f km\n%.2f L  /  ¥%,.0f  /  ¥%.0f/L\n燃費: %s",
                 f.date, f.odo, f.liters, f.cost,
                 f.liters > 0 ? f.cost / f.liters : 0, eco);
+    }
+
+    private String expenseText(Expense e) {
+        String t = String.format(Locale.JAPAN, "%s   %s\n¥%,.0f", e.date, e.category, e.cost);
+        if (!e.memo.trim().isEmpty()) t += "\n" + e.memo.trim();
+        return t;
+    }
+
+    /** One text block per year (newest first): total and per-category amounts. */
+    private List<String> expenseYears() {
+        java.util.Map<String, double[]> byYear = new java.util.TreeMap<>(Collections.reverseOrder());
+        java.util.Map<String, java.util.Map<String, Double>> cats = new java.util.HashMap<>();
+        for (Expense e : store.expenses) {
+            String y = e.date.substring(0, 4);
+            byYear.computeIfAbsent(y, k -> new double[2]);
+            byYear.get(y)[0] += e.cost;
+            byYear.get(y)[1]++;
+            cats.computeIfAbsent(y, k -> new java.util.LinkedHashMap<>()).merge(e.category, e.cost, Double::sum);
+        }
+        List<String> out = new ArrayList<>();
+        for (java.util.Map.Entry<String, double[]> en : byYear.entrySet()) {
+            StringBuilder sb = new StringBuilder(String.format(Locale.JAPAN, "%s年\n%d件 ・ ¥%,.0f",
+                    en.getKey(), (int) en.getValue()[1], en.getValue()[0]));
+            List<String> parts = new ArrayList<>();
+            for (java.util.Map.Entry<String, Double> c : cats.get(en.getKey()).entrySet())
+                parts.add(String.format(Locale.JAPAN, "%s ¥%,.0f", c.getKey(), c.getValue()));
+            sb.append("\n").append(String.join(" ・ ", parts));
+            out.add(sb.toString());
+        }
+        return out;
     }
 
     private String serviceText(Service s) {
@@ -325,6 +369,28 @@ public class LogActivity extends ThemedActivity {
                     f.cost = m;
                     f.full = full.isChecked();
                     if (edit == null) store.add(f);
+                });
+    }
+
+    private void editExpense(final Expense edit) {
+        LinearLayout box = dialogBox();
+        String[] date = datePicker(box, edit != null ? edit.date : null);
+        Spinner cat = Ui.stringSpinner(this, box, "種別", java.util.Arrays.asList(Expense.CATEGORIES),
+                edit != null ? edit.category : Expense.CATEGORIES[0]);
+        EditText cost = Ui.numField(this, box, "金額 (円)", edit != null ? num(edit.cost) : "");
+        EditText memo = Ui.field(this, box, "メモ(例: 自動車税、ワイパーブレード)",
+                edit != null ? edit.memo : "", InputType.TYPE_CLASS_TEXT);
+
+        showDialog(edit == null ? "費用を記録" : "費用を編集", box,
+                edit == null ? null : () -> store.remove(edit),
+                () -> {
+                    double c = Double.parseDouble(cost.getText().toString().trim());
+                    Expense e = edit != null ? edit : new Expense();
+                    e.date = date[0];
+                    e.category = (String) cat.getSelectedItem();
+                    e.cost = c;
+                    e.memo = memo.getText().toString();
+                    if (edit == null) store.add(e);
                 });
     }
 

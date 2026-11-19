@@ -162,7 +162,8 @@ public class SettingsActivity extends ThemedActivity {
     private String pendingIcon;       // null = unchanged, "" = none
     private LinearLayout photoBox;
     private Vehicle photoVehicle;
-    private static final String[] KEYS = { "vehicles", "types", "fills", "services" };
+    private static final String[] KEYS = { "vehicles", "types", "fills", "services", "expenses" };
+    private static final String[] REQUIRED = { "vehicles", "types", "fills", "services" };
 
     @Override protected void onActivityResult(int req, int res, Intent data) {
         super.onActivityResult(req, res, data);
@@ -203,7 +204,7 @@ public class SettingsActivity extends ThemedActivity {
             while ((n = is.read(buf)) > 0) bo.write(buf, 0, n);
             o = new JSONObject(new String(bo.toByteArray(), StandardCharsets.UTF_8));
             if (!"CarLog".equals(o.optString("app"))) throw new Exception("not CarLog");
-            for (String k : KEYS) o.getJSONArray(k);
+            for (String k : REQUIRED) o.getJSONArray(k);
             if (o.getJSONArray("vehicles").length() == 0) throw new Exception("no vehicles");
         } catch (Exception e) {
             Toast.makeText(this, "MyCarLogのエクスポートファイルではありません", Toast.LENGTH_LONG).show();
@@ -213,14 +214,19 @@ public class SettingsActivity extends ThemedActivity {
                 .setTitle("インポート")
                 .setMessage("車両 " + o.optJSONArray("vehicles").length() + " 台、給油 "
                         + o.optJSONArray("fills").length() + " 件、整備 "
-                        + o.optJSONArray("services").length() + " 件を読み込みます。\n"
+                        + o.optJSONArray("services").length() + " 件、費用 "
+                        + (o.optJSONArray("expenses") != null ? o.optJSONArray("expenses").length() : 0)
+                        + " 件を読み込みます。\n"
                         + "現在のデータはすべて置き換えられます。元に戻せません。")
                 .setNegativeButton("キャンセル", null)
                 .setPositiveButton("置き換える", (x, w) -> {
                     try {
                         android.content.SharedPreferences.Editor ed =
                                 getSharedPreferences("carlog", Context.MODE_PRIVATE).edit();
-                        for (String k : KEYS) ed.putString(k, o.getJSONArray(k).toString());
+                        for (String k : KEYS) {
+                            JSONArray arr = o.optJSONArray(k);
+                            ed.putString(k, arr != null ? arr.toString() : "[]");
+                        }
                         ed.putString("currentVehicle", o.optString("currentVehicle", ""));
                         ed.commit();
                         render();

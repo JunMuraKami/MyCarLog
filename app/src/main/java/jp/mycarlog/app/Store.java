@@ -28,9 +28,12 @@ public class Store {
     public String vehicleId;
     private final List<Fill> allFills = new ArrayList<>();
     private final List<Service> allServices = new ArrayList<>();
+    private final List<Expense> allExpenses = new ArrayList<>();
     /** Selected vehicle's records: fills by odometer, services newest first. */
     public final List<Fill> fills = new ArrayList<>();
     public final List<Service> services = new ArrayList<>();
+    /** Selected vehicle's other expenses, newest first. */
+    public final List<Expense> expenses = new ArrayList<>();
 
     public Store(Context c) {
         sp = c.getSharedPreferences("carlog", Context.MODE_PRIVATE);
@@ -56,6 +59,11 @@ public class Store {
             JSONArray a = new JSONArray(sp.getString("services", "[]"));
             for (int i = 0; i < a.length(); i++) allServices.add(Service.fromJson(a.getJSONObject(i)));
         } catch (Exception ignored) { }
+        try {
+            JSONArray a = new JSONArray(sp.getString("expenses", "[]"));
+            for (int i = 0; i < a.length(); i++) allExpenses.add(Expense.fromJson(a.getJSONObject(i)));
+        } catch (Exception ignored) { }
+        allExpenses.removeIf(e -> e.vehicle == null);
         // Records from before multi-vehicle support belong to the first vehicle.
         for (Fill f : allFills) if (f.vehicle == null) f.vehicle = first;
         for (Service s : allServices) if (s.vehicle == null) s.vehicle = first;
@@ -75,12 +83,15 @@ public class Store {
             for (Fill f : allFills) a.put(f.toJson());
             JSONArray s = new JSONArray();
             for (Service x : allServices) s.put(x.toJson());
+            JSONArray ex = new JSONArray();
+            for (Expense x : allExpenses) ex.put(x.toJson());
             JSONArray t = new JSONArray();
             for (ServiceType x : types) t.put(x.toJson());
             sp.edit().putString("vehicles", v.toString())
                     .putString("types", t.toString())
                     .putString("currentVehicle", vehicleId)
                     .putString("fills", a.toString())
+                    .putString("expenses", ex.toString())
                     .putString("services", s.toString()).apply();
         } catch (Exception ignored) { }
     }
@@ -158,6 +169,7 @@ public class Store {
         vehicles.remove(vehicle(id));
         allFills.removeIf(f -> f.vehicle.equals(id));
         allServices.removeIf(s -> s.vehicle.equals(id));
+        allExpenses.removeIf(e -> e.vehicle.equals(id));
         if (vehicleId.equals(id)) vehicleId = vehicles.get(0).id;
         save();
     }
@@ -168,6 +180,8 @@ public class Store {
     public void remove(Fill f) { allFills.remove(f); }
     public void add(Service s) { s.vehicle = vehicleId; allServices.add(s); }
     public void remove(Service s) { allServices.remove(s); }
+    public void add(Expense e) { e.vehicle = vehicleId; allExpenses.add(e); }
+    public void remove(Expense e) { allExpenses.remove(e); }
 
     /** Filter to the selected vehicle; full-to-full economy; services newest first. */
     private void recompute() {
@@ -175,6 +189,9 @@ public class Store {
         for (Fill f : allFills) if (f.vehicle.equals(vehicleId)) fills.add(f);
         services.clear();
         services.addAll(servicesOf(vehicleId));
+        expenses.clear();
+        for (Expense e : allExpenses) if (e.vehicle.equals(vehicleId)) expenses.add(e);
+        Collections.sort(expenses, (x, y) -> y.date.compareTo(x.date));
 
         Collections.sort(fills, (x, y) -> Double.compare(x.odo, y.odo));
         Fill prevFull = null;
@@ -210,6 +227,19 @@ public class Store {
     public double serviceCost() {
         double s = 0;
         for (Service v : services) s += v.cost;
+        return s;
+    }
+
+    public double expenseCost() {
+        double s = 0;
+        for (Expense e : expenses) s += e.cost;
+        return s;
+    }
+
+    /** Expense total of one year ("2026"). */
+    public double expenseCost(String year) {
+        double s = 0;
+        for (Expense e : expenses) if (e.date.startsWith(year)) s += e.cost;
         return s;
     }
 

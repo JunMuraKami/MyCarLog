@@ -48,11 +48,15 @@ public class MainActivity extends ThemedActivity {
         LinearLayout bar = new LinearLayout(this);
         bar.setPadding(dp(12), dp(4), dp(12), dp(12));
         LinearLayout.LayoutParams b1 = new LinearLayout.LayoutParams(0, dp(56), 1f);
-        b1.rightMargin = dp(6);
+        b1.rightMargin = dp(4);
         LinearLayout.LayoutParams b2 = new LinearLayout.LayoutParams(0, dp(56), 1f);
-        b2.leftMargin = dp(6);
+        b2.leftMargin = dp(4);
+        b2.rightMargin = dp(4);
+        LinearLayout.LayoutParams b3 = new LinearLayout.LayoutParams(0, dp(56), 1f);
+        b3.leftMargin = dp(4);
         bar.addView(navButton("給油", LogActivity.MODE_FUEL), b1);
         bar.addView(navButton("整備", LogActivity.MODE_SERVICE), b2);
+        bar.addView(navButton("費用", LogActivity.MODE_EXPENSE), b3);
         root.addView(bar);
 
         setContentView(screen(false, R.drawable.ic_settings, "設定",
@@ -249,6 +253,21 @@ public class MainActivity extends ThemedActivity {
             item.addView(text(d.detail, 14, d.level > 0 ? color : GRAY));
             svc.addView(item);
         }
+        expenseCard();
+    }
+
+    /** Card with the year's and the overall cost of other expenses (tax, parts, ...). */
+    private void expenseCard() {
+        LinearLayout c = card("費用(税金・パーツなど)", () -> openLog(LogActivity.MODE_EXPENSE));
+        if (store.expenses.isEmpty()) {
+            c.addView(text("「費用」から記録を追加してください", 13, GRAY));
+            return;
+        }
+        String year = String.valueOf(LocalDate.now().getYear());
+        row(c, year + "年の合計", String.format(Locale.JAPAN, "¥%,.0f", store.expenseCost(year)));
+        row(c, "これまでの合計", String.format(Locale.JAPAN, "¥%,.0f", store.expenseCost()));
+        Expense e = store.expenses.get(0);
+        row(c, "前回", e.date + "  " + e.category);
     }
 
     /** Row of round vehicle icons (owned first, then ones let go) and the selected vehicle's name. */
