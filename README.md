@@ -3,8 +3,6 @@
 給油・燃費・メンテナンスを記録する、Android 向けのシンプルな車両管理アプリです。
 
 ## スクリーンショット
-画像は架空のデータです。
-
 <p>
 <img src="docs/screenshots/home-yaris.jpg" width="240" alt="ホーム">
 <img src="docs/screenshots/home-roadster.jpg" width="240" alt="ホーム(2台目)">
