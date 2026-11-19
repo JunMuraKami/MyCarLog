@@ -28,6 +28,7 @@ public class MainActivity extends ThemedActivity {
 
     private Store store;
     private LinearLayout content;
+    private boolean showSold;   // expand the vehicles that were let go
 
     @Override protected void onCreate(Bundle b) {
         super.onCreate(b);
@@ -215,8 +216,14 @@ public class MainActivity extends ThemedActivity {
     /** Row of round vehicle icons (owned first, then ones let go) and the selected vehicle's name. */
     private View vehiclePicker() {
         final List<Vehicle> order = new ArrayList<>();
+        int soldCount = 0;
         for (Vehicle v : store.vehicles) if (v.owned) order.add(v);
-        for (Vehicle v : store.vehicles) if (!v.owned) order.add(v);
+        for (Vehicle v : store.vehicles) {
+            if (v.owned) continue;
+            soldCount++;
+            // Let-go vehicles stay hidden unless expanded or currently selected.
+            if (showSold || v.id.equals(store.vehicleId)) order.add(v);
+        }
 
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
@@ -231,7 +238,7 @@ public class MainActivity extends ThemedActivity {
             item.setGravity(Gravity.CENTER_HORIZONTAL);
             item.setPadding(dp(6), 0, dp(6), 0);
             item.addView(Avatar.view(this, v.name, v.photo, 68, sel, pal));
-            TextView n = text(v.name + (v.owned ? "" : "(手放し)"), 12, sel ? pal.accent : GRAY);
+            TextView n = text(v.name, 12, sel ? pal.accent : GRAY);
             n.setSingleLine(true);
             n.setEllipsize(android.text.TextUtils.TruncateAt.END);
             n.setMaxWidth(dp(110));
@@ -246,6 +253,20 @@ public class MainActivity extends ThemedActivity {
                 render();
             });
             row.addView(item);
+        }
+        if (soldCount > 0) {
+            TextView chip = text(showSold ? "手放し分を隠す" : "手放した車両 " + soldCount, 12, pal.accent);
+            chip.setGravity(Gravity.CENTER);
+            chip.setPadding(dp(12), dp(8), dp(12), dp(8));
+            chip.setBackground(shape(pal.tonal(), 100));
+            chip.setOnClickListener(x -> {
+                showSold = !showSold;
+                render();
+            });
+            LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(-2, -2);
+            clp.gravity = Gravity.CENTER_VERTICAL;
+            clp.setMargins(dp(8), 0, dp(8), dp(20));
+            row.addView(chip, clp);
         }
         hs.addView(row);
         box.addView(hs);
