@@ -233,6 +233,13 @@ public class SettingsActivity extends ThemedActivity {
         photoBox.addView(Avatar.view(this, photoVehicle.name, p, i, 96, false, pal));
     }
 
+    private View centered(View v) {
+        LinearLayout w = new LinearLayout(this);
+        w.setGravity(android.view.Gravity.CENTER_HORIZONTAL);
+        w.addView(v);
+        return w;
+    }
+
     /** Grid of preset car icons, used when a vehicle has no photo. */
     private void chooseIcon() {
         android.widget.GridLayout grid = new android.widget.GridLayout(this);
@@ -247,12 +254,6 @@ public class SettingsActivity extends ThemedActivity {
             cell.setPadding(dp(4), dp(6), dp(4), dp(6));
             cell.addView(Avatar.view(this, "", "", id, 60, id.equals(
                     pendingIcon != null ? pendingIcon : photoVehicle.icon), pal));
-            TextView t = new TextView(this);
-            t.setText(Avatar.ICON_NAMES[k]);
-            t.setTextSize(10);
-            t.setGravity(android.view.Gravity.CENTER);
-            t.setSingleLine(true);
-            cell.addView(t);
             cell.setOnClickListener(x -> {
                 pendingIcon = id;
                 pendingPhoto = "";
@@ -260,11 +261,11 @@ public class SettingsActivity extends ThemedActivity {
                 dlg[0].dismiss();
             });
             android.widget.GridLayout.LayoutParams lp = new android.widget.GridLayout.LayoutParams();
-            lp.width = dp(78);
+            lp.width = dp(72);
             lp.height = android.widget.GridLayout.LayoutParams.WRAP_CONTENT;
             grid.addView(cell, lp);
         }
-        dlg[0] = new AlertDialog.Builder(this).setTitle("アイコンを選ぶ").setView(grid)
+        dlg[0] = new AlertDialog.Builder(this).setTitle("アイコンから選ぶ").setView(centered(grid))
                 .setNegativeButton("キャンセル", null).show();
     }
 
@@ -287,7 +288,7 @@ public class SettingsActivity extends ThemedActivity {
                 new Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE)
                         .setType("image/*"), REQ_PHOTO));
         Button icon = new Button(this);
-        icon.setText("アイコンを選ぶ");
+        icon.setText("アイコンから選ぶ");
         pill(icon, false);
         icon.setOnClickListener(x -> chooseIcon());
         Button clear = new Button(this);

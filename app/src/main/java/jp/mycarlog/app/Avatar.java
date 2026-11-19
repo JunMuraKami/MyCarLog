@@ -26,7 +26,6 @@ final class Avatar {
 
     /** Preset icons offered when a vehicle has no photo. */
     static final String[] ICON_IDS = {"sedan", "hatch", "sports", "wagon", "suv", "van", "truck", "kei"};
-    static final String[] ICON_NAMES = {"セダン", "ハッチバック", "スポーツカー", "ワゴン", "SUV", "ミニバン", "トラック", "軽自動車"};
     private static final int[] ICON_RES = {R.drawable.ic_car_sedan, R.drawable.ic_car_hatch,
             R.drawable.ic_car_sports, R.drawable.ic_car_wagon, R.drawable.ic_car_suv,
             R.drawable.ic_car_van, R.drawable.ic_car_truck, R.drawable.ic_car_kei};
