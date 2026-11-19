@@ -86,14 +86,21 @@ public class SettingsActivity extends Activity {
             startActivityForResult(i, REQ_IMPORT);
         });
 
-        header("GitHub");
-        row("MyCarLog", GITHUB_URL, 0xFF1976D2, () -> {
+        ImageView gh = new ImageView(this);
+        gh.setImageResource(R.drawable.ic_github);
+        gh.setContentDescription("GitHub");
+        gh.setPadding(dp(12), dp(12), dp(12), dp(12));
+        gh.setOnClickListener(v -> {
             try {
                 startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(GITHUB_URL)));
             } catch (Exception e) {
                 Toast.makeText(this, "ブラウザを開けませんでした", Toast.LENGTH_SHORT).show();
             }
         });
+        LinearLayout.LayoutParams glp = new LinearLayout.LayoutParams(dp(72), dp(72));
+        glp.gravity = android.view.Gravity.CENTER_HORIZONTAL;
+        glp.topMargin = dp(20);
+        content.addView(gh, glp);
     }
 
     private static final String GITHUB_URL = "https://github.com/JunMuraKami/MyCarLog";
