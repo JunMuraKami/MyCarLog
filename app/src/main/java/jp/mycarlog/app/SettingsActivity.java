@@ -23,7 +23,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
-/** Settings: manage vehicles and the maintenance items offered when logging. */
+/** Settings: vehicles, theme, updates and data. (Maintenance items live in ServiceTypesActivity.) */
 public class SettingsActivity extends ThemedActivity {
     private int GRAY, TEXT;
 
@@ -73,11 +73,6 @@ public class SettingsActivity extends ThemedActivity {
         rowTarget = null;
         addButton("＋ 車両を追加", () -> editVehicle(null));
 
-        header("整備項目");
-        note("記録を追加するときに選べる項目と、その標準の次回予定です。");
-        for (ServiceType t : store.types) row(t.name, t.summary(), TEXT, () -> editType(t));
-        addButton("＋ 項目を追加", () -> editType(null));
-
         header("テーマ");
         note("アプリの配色を切り替えます。");
         addButton("テーマ: " + pal.name, this::chooseTheme);
@@ -87,7 +82,7 @@ public class SettingsActivity extends ThemedActivity {
         addButton("更新を確認", this::checkUpdate);
 
         header("データ");
-        note("車両・給油・整備・項目設定のすべてをファイルに書き出し/読み込みします。");
+        note("車両・給油・整備・費用・項目設定のすべてをファイルに書き出し/読み込みします。");
         addButton("エクスポート(ファイルに保存)", () -> {
             Intent i = new Intent(Intent.ACTION_CREATE_DOCUMENT)
                     .addCategory(Intent.CATEGORY_OPENABLE).setType("application/json")
@@ -489,69 +484,6 @@ public class SettingsActivity extends ThemedActivity {
             if (pendingPhoto != null) v.photo = pendingPhoto;
             if (pendingIcon != null) v.icon = pendingIcon;
             if (edit == null) store.addVehicle(v); else store.save();
-            dlg.dismiss();
-            render();
-        });
-    }
-
-    // ---- maintenance items ----
-
-    private void editType(final ServiceType edit) {
-        LinearLayout box = dialogBox();
-        final boolean fixed = edit != null && Service.OTHER.equals(edit.name);
-        EditText name = Ui.field(this, box, "項目名", edit != null ? edit.name : "", InputType.TYPE_CLASS_TEXT);
-        if (fixed) {
-            name.setEnabled(false);
-            TextView hint = Ui.label(this, box, "「その他」は項目名を記録ごとのメモで決めるため、名前の変更・削除はできません。");
-            hint.setTextSize(12);
-        }
-        Ui.Choice km = Ui.choice(this, box, "標準の次回まで(距離)", Ui.KM_CHOICES,
-                edit != null ? edit.km : 0, "km後");
-        Ui.Choice mo = Ui.choice(this, box, "標準の次回まで(期間)", Ui.MONTH_CHOICES,
-                edit != null ? edit.months : 0, "ヶ月後");
-
-        AlertDialog.Builder d = new AlertDialog.Builder(this)
-                .setTitle(edit == null ? "項目を追加" : "項目を編集")
-                .setView(box)
-                .setNegativeButton("キャンセル", null)
-                .setPositiveButton("保存", null);
-        if (edit != null && !fixed) {
-            int uses = store.countServices(edit.name);
-            d.setNeutralButton("削除", (x, w) -> new AlertDialog.Builder(this)
-                    .setTitle("「" + edit.name + "」を削除")
-                    .setMessage("選択肢から外します。" + (uses > 0
-                            ? "この項目の記録 " + uses + " 件は、履歴としてそのまま残ります。" : ""))
-                    .setNegativeButton("キャンセル", null)
-                    .setPositiveButton("削除", (y, z) -> {
-                        store.deleteType(edit);
-                        store.save();
-                        render();
-                    })
-                    .show());
-        }
-        final AlertDialog dlg = d.create();
-        dlg.show();
-        dlg.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(x -> {
-            String n = fixed ? edit.name : name.getText().toString().trim();
-            if (n.isEmpty()) {
-                Toast.makeText(this, "項目名を入力してください", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            ServiceType same = store.type(n);
-            if (same != null && same != edit) {
-                Toast.makeText(this, "同じ名前の項目があります", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            if (edit == null) {
-                ServiceType other = store.type(Service.OTHER); // keep その他 last
-                store.types.add(store.types.indexOf(other),
-                        new ServiceType(n, km.value(), mo.value()));
-            } else {
-                if (!n.equals(edit.name)) store.renameType(edit, n);
-                edit.km = km.value();
-                edit.months = mo.value();
-            }
-            store.save();
             dlg.dismiss();
             render();
         });

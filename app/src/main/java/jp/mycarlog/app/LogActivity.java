@@ -124,7 +124,17 @@ public class LogActivity extends ThemedActivity {
         lp.setMargins(dp(12), dp(4), dp(12), dp(12));
         root.addView(add, lp);
 
-        setContentView(screen(true, 0, null, null, root));
+        if (mode == MODE_SERVICE)
+            setContentView(screen(true, R.drawable.ic_settings, "整備項目の設定",
+                    () -> startActivity(new android.content.Intent(this, ServiceTypesActivity.class)), root));
+        else setContentView(screen(true, 0, null, null, root));
+        refresh();
+    }
+
+    /** Back from the item settings: reload so the editor offers the changed items. */
+    @Override protected void onRestart() {
+        super.onRestart();
+        store = new Store(this);
         refresh();
     }
 
