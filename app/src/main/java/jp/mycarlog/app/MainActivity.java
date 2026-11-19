@@ -255,7 +255,7 @@ public class MainActivity extends ThemedActivity {
             row.addView(item);
         }
         if (soldCount > 0) {
-            TextView chip = text(showSold ? "手放し分を隠す" : "手放した車両 " + soldCount, 12, pal.accent);
+            TextView chip = text(showSold ? "過去の車両を隠す" : "過去の車両 " + soldCount, 12, pal.accent);
             chip.setGravity(Gravity.CENTER);
             chip.setPadding(dp(12), dp(8), dp(12), dp(8));
             chip.setBackground(shape(pal.tonal(), 100));

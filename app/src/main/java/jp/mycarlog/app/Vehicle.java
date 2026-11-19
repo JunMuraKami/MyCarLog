@@ -40,7 +40,7 @@ public class Vehicle {
         if (tank > 0) b.add(String.format(Locale.JAPAN, "タンク %s L",
                 tank == Math.floor(tank) ? String.valueOf((long) tank) : String.valueOf(tank)));
         if (!plate.trim().isEmpty()) b.add(plate.trim());
-        if (!owned) b.add("手放し済み");
+        if (!owned) b.add("過去の車両");
         List<String> lines = new ArrayList<>();
         if (!a.isEmpty()) lines.add(String.join(" ", a));
         if (!b.isEmpty()) lines.add(String.join(" ・ ", b));
