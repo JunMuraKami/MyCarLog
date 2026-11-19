@@ -1,4 +1,4 @@
-# MyCarLog
+# <img src="docs/icon.png" width="40" align="center" alt=""> MyCarLog
 
 給油・燃費・メンテナンスを記録する、Android 向けのシンプルな車両管理アプリです。
 
