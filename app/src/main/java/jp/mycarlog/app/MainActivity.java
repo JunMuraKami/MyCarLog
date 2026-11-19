@@ -1,7 +1,7 @@
 package jp.mycarlog.app;
 
 import android.Manifest;
-import android.app.Activity;
+
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -22,20 +22,21 @@ import java.util.Locale;
 import java.util.function.Consumer;
 
 /** Home: reminders for all vehicles, vehicle picker, and the selected vehicle's summary. */
-public class MainActivity extends Activity {
+public class MainActivity extends ThemedActivity {
     private static final int MENU_SETTINGS = 1;
-    static final int RED = 0xFFD32F2F, ORANGE = 0xFFEF6C00, GRAY = 0xFF616161, TEXT = 0xFF212121;
+    private int RED, ORANGE, GRAY, TEXT;
 
     private Store store;
     private LinearLayout content;
 
     @Override protected void onCreate(Bundle b) {
         super.onCreate(b);
+        RED = pal.red; ORANGE = pal.orange; GRAY = pal.gray; TEXT = pal.text;
         setTitle("MyCarLog");
 
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundColor(0xFFF2F4F7);
+        root.setBackgroundColor(pal.bg);
 
         ScrollView sv = new ScrollView(this);
         content = new LinearLayout(this);
@@ -111,14 +112,14 @@ public class MainActivity extends Activity {
             banner.setOrientation(LinearLayout.VERTICAL);
             banner.setPadding(dp(14), dp(10), dp(14), dp(10));
             GradientDrawable bg = new GradientDrawable();
-            bg.setColor(0xFFE3F2FD);
-            bg.setStroke(dp(1), 0xFF1976D2);
+            bg.setColor(pal.accentBg);
+            bg.setStroke(dp(1), pal.accent);
             bg.setCornerRadius(dp(10));
             banner.setBackground(bg);
-            TextView t = text("新しいバージョン " + upd.version + " があります", 15, 0xFF1976D2);
+            TextView t = text("新しいバージョン " + upd.version + " があります", 15, pal.accent);
             t.setTypeface(Typeface.DEFAULT_BOLD);
             banner.addView(t);
-            banner.addView(text("タップして更新", 13, 0xFF1976D2));
+            banner.addView(text("タップして更新", 13, pal.accent));
             banner.setOnClickListener(v -> Updater.prompt(this, upd));
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
             lp.bottomMargin = dp(8);
@@ -132,7 +133,7 @@ public class MainActivity extends Activity {
             banner.setOrientation(LinearLayout.VERTICAL);
             banner.setPadding(dp(14), dp(10), dp(14), dp(10));
             GradientDrawable bg = new GradientDrawable();
-            bg.setColor(d.level == 2 ? 0xFFFDECEA : 0xFFFFF3E0);
+            bg.setColor(d.level == 2 ? pal.redBg : pal.orangeBg);
             bg.setStroke(dp(1), color);
             bg.setCornerRadius(dp(10));
             banner.setBackground(bg);
@@ -255,7 +256,7 @@ public class MainActivity extends Activity {
         c.setOrientation(LinearLayout.VERTICAL);
         c.setPadding(dp(16), dp(14), dp(16), dp(16));
         GradientDrawable bg = new GradientDrawable();
-        bg.setColor(0xFFFFFFFF);
+        bg.setColor(pal.card);
         bg.setCornerRadius(dp(12));
         c.setBackground(bg);
         c.setElevation(dp(2));

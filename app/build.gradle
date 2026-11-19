@@ -10,8 +10,8 @@ android {
         applicationId 'jp.mycarlog.app'
         minSdk 26
         targetSdk 34
-        versionCode 17
-        versionName '1.8.0'
+        versionCode 18
+        versionName '1.9.0'
     }
 
     // Release signing is optional: pass -PreleaseStoreFile=... -PreleaseStorePassword=...

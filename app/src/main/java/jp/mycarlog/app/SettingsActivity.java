@@ -1,6 +1,6 @@
 package jp.mycarlog.app;
 
-import android.app.Activity;
+
 import android.app.AlertDialog;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
@@ -23,19 +23,20 @@ import java.util.List;
 import java.util.Locale;
 
 /** Settings: manage vehicles and the maintenance items offered when logging. */
-public class SettingsActivity extends Activity {
-    private static final int GRAY = 0xFF616161, TEXT = 0xFF212121;
+public class SettingsActivity extends ThemedActivity {
+    private int GRAY, TEXT;
 
     private Store store;
     private LinearLayout content;
 
     @Override protected void onCreate(Bundle b) {
         super.onCreate(b);
+        GRAY = pal.gray; TEXT = pal.text;
         setTitle("設定");
         if (getActionBar() != null) getActionBar().setDisplayHomeAsUpEnabled(true);
 
         ScrollView sv = new ScrollView(this);
-        sv.setBackgroundColor(0xFFF2F4F7);
+        sv.setBackgroundColor(pal.bg);
         content = new LinearLayout(this);
         content.setOrientation(LinearLayout.VERTICAL);
         content.setPadding(dp(12), dp(8), dp(12), dp(16));
@@ -68,6 +69,10 @@ public class SettingsActivity extends Activity {
         for (ServiceType t : store.types) row(t.name, t.summary(), TEXT, () -> editType(t));
         addButton("＋ 項目を追加", () -> editType(null));
 
+        header("テーマ");
+        note("アプリの配色を切り替えます。");
+        addButton("テーマ: " + pal.name, this::chooseTheme);
+
         header("アプリについて");
         note("バージョン " + Updater.current(this) + "  /  GitHub のリリースから更新を受け取ります。");
         addButton("更新を確認", this::checkUpdate);
@@ -89,6 +94,7 @@ public class SettingsActivity extends Activity {
         ImageView gh = new ImageView(this);
         gh.setImageResource(R.drawable.ic_github);
         gh.setContentDescription("GitHub");
+        if (pal.dark) gh.setColorFilter(pal.text);
         gh.setPadding(dp(12), dp(12), dp(12), dp(12));
         gh.setOnClickListener(v -> {
             try {
@@ -111,6 +117,22 @@ public class SettingsActivity extends Activity {
     }
 
     private static final String GITHUB_URL = "https://github.com/JunMuraKami/MyCarLog";
+
+    private void chooseTheme() {
+        String[] names = new String[AppTheme.ALL.length];
+        int sel = 0;
+        for (int i = 0; i < names.length; i++) {
+            names[i] = AppTheme.ALL[i].name;
+            if (AppTheme.ALL[i].id.equals(pal.id)) sel = i;
+        }
+        new AlertDialog.Builder(this).setTitle("テーマ")
+                .setSingleChoiceItems(names, sel, (d, which) -> {
+                    AppTheme.set(this, AppTheme.ALL[which].id);
+                    d.dismiss();
+                    recreate();
+                })
+                .setNegativeButton("キャンセル", null).show();
+    }
 
     // ---- app update ----
 
@@ -360,7 +382,7 @@ public class SettingsActivity extends Activity {
         r.setOrientation(LinearLayout.VERTICAL);
         r.setPadding(dp(16), dp(12), dp(16), dp(12));
         GradientDrawable bg = new GradientDrawable();
-        bg.setColor(0xFFFFFFFF);
+        bg.setColor(pal.card);
         bg.setCornerRadius(dp(10));
         r.setBackground(bg);
         r.setOnClickListener(v -> onTap.run());

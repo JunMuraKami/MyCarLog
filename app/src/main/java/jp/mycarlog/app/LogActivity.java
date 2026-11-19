@@ -1,6 +1,6 @@
 package jp.mycarlog.app;
 
-import android.app.Activity;
+
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.os.Bundle;
@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Locale;
 
 /** Log page for fuel or maintenance: list past records, edit them, add new ones. */
-public class LogActivity extends Activity {
+public class LogActivity extends ThemedActivity {
     public static final String EXTRA_MODE = "mode";
     public static final int MODE_FUEL = 0, MODE_SERVICE = 1;
 
@@ -40,11 +40,13 @@ public class LogActivity extends Activity {
 
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
+        root.setBackgroundColor(pal.bg);
 
         summary = new TextView(this);
         summary.setTextSize(14);
         summary.setPadding(pad, dp(10), pad, dp(10));
-        summary.setBackgroundColor(0xFFE3F2FD);
+        summary.setBackgroundColor(pal.accentBg);
+        summary.setTextColor(pal.text);
         root.addView(summary);
 
         if (mode == MODE_FUEL) {
@@ -74,6 +76,7 @@ public class LogActivity extends Activity {
                 TextView t = new TextView(LogActivity.this);
                 t.setPadding(pad, dp(10), pad, dp(10));
                 t.setTextSize(15);
+                t.setTextColor(pal.gray);
                 Object o = shown.get(i);
                 if (o instanceof FuelStats.Period) {
                     FuelStats.Period q = (FuelStats.Period) o;
