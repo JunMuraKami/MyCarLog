@@ -137,7 +137,7 @@ public class MainActivity extends ThemedActivity {
             bg.setStroke(dp(1), color);
             bg.setCornerRadius(dp(10));
             banner.setBackground(bg);
-            TextView t = text("[" + d.vehicle.name + "] [" + d.s.label() + "] "
+            TextView t = text(d.vehicle.name + "の" + d.s.label()
                     + (d.level == 2 ? "の期限を過ぎています" : "が近づいています"), 15, color);
             t.setTypeface(Typeface.DEFAULT_BOLD);
             banner.addView(t);
