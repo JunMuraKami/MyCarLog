@@ -144,7 +144,7 @@ public class LogActivity extends Activity {
 
     private String fillText(Fill f) {
         String eco = f.economy > 0 ? String.format(Locale.JAPAN, "%.2f km/L", f.economy)
-                : (f.full ? "-" : "(満タンでない)");
+                : (f.full ? "-" : "-- km/L (Not FULL)");
         return String.format(Locale.JAPAN,
                 "%s   %,.0f km\n%.2f L  /  ¥%,.0f  /  ¥%.0f/L\n燃費: %s",
                 f.date, f.odo, f.liters, f.cost,
