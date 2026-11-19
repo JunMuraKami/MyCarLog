@@ -24,6 +24,18 @@ import java.io.InputStream;
 final class Avatar {
     private static final int STORED_SIZE = 256;
 
+    /** Preset icons offered when a vehicle has no photo. */
+    static final String[] ICON_IDS = {"sedan", "hatch", "sports", "wagon", "suv", "van", "truck", "kei"};
+    static final String[] ICON_NAMES = {"セダン", "ハッチバック", "スポーツカー", "ワゴン", "SUV", "ミニバン", "トラック", "軽自動車"};
+    private static final int[] ICON_RES = {R.drawable.ic_car_sedan, R.drawable.ic_car_hatch,
+            R.drawable.ic_car_sports, R.drawable.ic_car_wagon, R.drawable.ic_car_suv,
+            R.drawable.ic_car_van, R.drawable.ic_car_truck, R.drawable.ic_car_kei};
+
+    static int iconRes(String id) {
+        for (int i = 0; i < ICON_IDS.length; i++) if (ICON_IDS[i].equals(id)) return ICON_RES[i];
+        return 0;
+    }
+
     private Avatar() { }
 
     /** Reads an image, crops it to a centred square and returns it as base64 JPEG; null on failure. */
@@ -78,7 +90,8 @@ final class Avatar {
     }
 
     /** A round icon: the photo, or the first letter of the name when there is none. */
-    static View view(Context c, String name, String photo, int sizeDp, boolean ring, AppTheme.Pal pal) {
+    static View view(Context c, String name, String photo, String icon, int sizeDp, boolean ring,
+                     AppTheme.Pal pal) {
         final float d = c.getResources().getDisplayMetrics().density;
         int size = (int) (sizeDp * d);
         int inset = (int) (4 * d);
@@ -97,6 +110,14 @@ final class Avatar {
             ImageView iv = new ImageView(c);
             iv.setImageBitmap(bm);
             iv.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            inner = iv;
+        } else if (iconRes(icon) != 0) {
+            ImageView iv = new ImageView(c);
+            iv.setImageResource(iconRes(icon));
+            iv.setColorFilter(pal.accent);
+            int pad = (int) (sizeDp * 0.07f * d);
+            iv.setPadding(pad, pad, pad, pad);
+            iv.setBackgroundColor(pal.tonal());
             inner = iv;
         } else {
             TextView t = new TextView(c);

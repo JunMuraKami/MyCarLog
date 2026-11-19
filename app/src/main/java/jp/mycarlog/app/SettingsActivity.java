@@ -61,7 +61,7 @@ public class SettingsActivity extends ThemedActivity {
         for (Vehicle v : store.vehicles) {
             String sub = v.subtitle();
             row(v.name, sub, v.owned ? TEXT : GRAY, () -> editVehicle(v),
-                    Avatar.view(this, v.name, v.photo, 52, false, pal));
+                    Avatar.view(this, v.name, v.photo, v.icon, 52, false, pal));
         }
         addButton("＋ 車両を追加", () -> editVehicle(null));
 
@@ -151,6 +151,7 @@ public class SettingsActivity extends ThemedActivity {
 
     private static final int REQ_EXPORT = 11, REQ_IMPORT = 12, REQ_PHOTO = 13;
     private String pendingPhoto;      // null = unchanged, "" = removed
+    private String pendingIcon;       // null = unchanged, "" = none
     private LinearLayout photoBox;
     private Vehicle photoVehicle;
     private static final String[] KEYS = { "vehicles", "types", "fills", "services" };
@@ -228,7 +229,43 @@ public class SettingsActivity extends ThemedActivity {
     private void showPhoto() {
         photoBox.removeAllViews();
         String p = pendingPhoto != null ? pendingPhoto : photoVehicle.photo;
-        photoBox.addView(Avatar.view(this, photoVehicle.name, p, 96, false, pal));
+        String i = pendingIcon != null ? pendingIcon : photoVehicle.icon;
+        photoBox.addView(Avatar.view(this, photoVehicle.name, p, i, 96, false, pal));
+    }
+
+    /** Grid of preset car icons, used when a vehicle has no photo. */
+    private void chooseIcon() {
+        android.widget.GridLayout grid = new android.widget.GridLayout(this);
+        grid.setColumnCount(4);
+        grid.setPadding(dp(8), dp(8), dp(8), dp(8));
+        final AlertDialog[] dlg = new AlertDialog[1];
+        for (int k = 0; k < Avatar.ICON_IDS.length; k++) {
+            final String id = Avatar.ICON_IDS[k];
+            LinearLayout cell = new LinearLayout(this);
+            cell.setOrientation(LinearLayout.VERTICAL);
+            cell.setGravity(android.view.Gravity.CENTER_HORIZONTAL);
+            cell.setPadding(dp(4), dp(6), dp(4), dp(6));
+            cell.addView(Avatar.view(this, "", "", id, 60, id.equals(
+                    pendingIcon != null ? pendingIcon : photoVehicle.icon), pal));
+            TextView t = new TextView(this);
+            t.setText(Avatar.ICON_NAMES[k]);
+            t.setTextSize(10);
+            t.setGravity(android.view.Gravity.CENTER);
+            t.setSingleLine(true);
+            cell.addView(t);
+            cell.setOnClickListener(x -> {
+                pendingIcon = id;
+                pendingPhoto = "";
+                showPhoto();
+                dlg[0].dismiss();
+            });
+            android.widget.GridLayout.LayoutParams lp = new android.widget.GridLayout.LayoutParams();
+            lp.width = dp(78);
+            lp.height = android.widget.GridLayout.LayoutParams.WRAP_CONTENT;
+            grid.addView(cell, lp);
+        }
+        dlg[0] = new AlertDialog.Builder(this).setTitle("アイコンを選ぶ").setView(grid)
+                .setNegativeButton("キャンセル", null).show();
     }
 
     private void editVehicle(final Vehicle edit) {
@@ -236,6 +273,7 @@ public class SettingsActivity extends ThemedActivity {
         final Vehicle v = edit != null ? edit : new Vehicle(null, "");
         photoVehicle = v;
         pendingPhoto = null;
+        pendingIcon = null;
         photoBox = new LinearLayout(this);
         photoBox.setOrientation(LinearLayout.VERTICAL);
         photoBox.setGravity(android.view.Gravity.CENTER_HORIZONTAL);
@@ -248,15 +286,22 @@ public class SettingsActivity extends ThemedActivity {
         pick.setOnClickListener(x -> startActivityForResult(
                 new Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE)
                         .setType("image/*"), REQ_PHOTO));
+        Button icon = new Button(this);
+        icon.setText("アイコンを選ぶ");
+        pill(icon, false);
+        icon.setOnClickListener(x -> chooseIcon());
         Button clear = new Button(this);
-        clear.setText("写真を外す");
+        clear.setText("写真・アイコンを外す");
         pill(clear, false);
-        clear.setOnClickListener(x -> { pendingPhoto = ""; showPhoto(); });
+        clear.setOnClickListener(x -> { pendingPhoto = ""; pendingIcon = ""; showPhoto(); });
         LinearLayout.LayoutParams pl = new LinearLayout.LayoutParams(0, dp(44), 1f);
         pl.setMargins(dp(4), dp(8), dp(4), dp(4));
         photoBtns.addView(pick, pl);
-        photoBtns.addView(clear, pl);
+        photoBtns.addView(icon, pl);
         box.addView(photoBtns);
+        LinearLayout.LayoutParams cl = new LinearLayout.LayoutParams(-1, dp(44));
+        cl.setMargins(dp(4), dp(0), dp(4), dp(4));
+        box.addView(clear, cl);
         showPhoto();
         EditText name = Ui.field(this, box, "車両名(ホームでの表示名)", v.name, InputType.TYPE_CLASS_TEXT);
         EditText make = Ui.field(this, box, "メーカー", v.make, InputType.TYPE_CLASS_TEXT);
@@ -326,6 +371,7 @@ public class SettingsActivity extends ThemedActivity {
             v.vin = vin.getText().toString().trim();
             v.owned = owned.isChecked();
             if (pendingPhoto != null) v.photo = pendingPhoto;
+            if (pendingIcon != null) v.icon = pendingIcon;
             if (edit == null) store.addVehicle(v); else store.save();
             dlg.dismiss();
             render();

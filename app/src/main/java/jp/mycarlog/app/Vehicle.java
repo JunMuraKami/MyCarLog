@@ -23,6 +23,7 @@ public class Vehicle {
     public String plate = "";    // ナンバー
     public String vin = "";      // 車台番号
     public boolean owned = true; // 現在所有中
+    public String icon = "";     // preset icon id (see Avatar.ICON_IDS), used when there is no photo
     public String photo = "";    // アイコン写真(base64 JPEG), "" = not set
 
     public Vehicle(String id, String name) {
@@ -51,7 +52,7 @@ public class Vehicle {
         return new JSONObject().put("id", id).put("name", name)
                 .put("make", make).put("model", model).put("grade", grade)
                 .put("year", year).put("fuelType", fuelType).put("tank", tank)
-                .put("plate", plate).put("vin", vin).put("owned", owned).put("photo", photo);
+                .put("plate", plate).put("vin", vin).put("owned", owned).put("photo", photo).put("icon", icon);
     }
 
     public static Vehicle fromJson(JSONObject o) throws JSONException {
@@ -66,6 +67,7 @@ public class Vehicle {
         v.vin = o.optString("vin", "");
         v.owned = o.optBoolean("owned", true);
         v.photo = o.optString("photo", "");
+        v.icon = o.optString("icon", "");
         return v;
     }
 }

@@ -237,7 +237,7 @@ public class MainActivity extends ThemedActivity {
             item.setOrientation(LinearLayout.VERTICAL);
             item.setGravity(Gravity.CENTER_HORIZONTAL);
             item.setPadding(dp(6), 0, dp(6), 0);
-            item.addView(Avatar.view(this, v.name, v.photo, 68, sel, pal));
+            item.addView(Avatar.view(this, v.name, v.photo, v.icon, 68, sel, pal));
             TextView n = text(v.name, 12, sel ? pal.accent : GRAY);
             n.setSingleLine(true);
             n.setEllipsize(android.text.TextUtils.TruncateAt.END);
