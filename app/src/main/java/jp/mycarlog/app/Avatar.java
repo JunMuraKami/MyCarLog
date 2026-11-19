@@ -37,18 +37,18 @@ final class Avatar {
 
     private Avatar() { }
 
-    /** Reads an image, crops it to a centred square and returns it as base64 JPEG; null on failure. */
-    static String encode(ContentResolver cr, Uri uri) {
+    /** Reads an image (EXIF rotation applied, long side at most about 1600 px); null on failure. */
+    static Bitmap load(ContentResolver cr, Uri uri) {
         try {
             BitmapFactory.Options o = new BitmapFactory.Options();
             o.inJustDecodeBounds = true;
             try (InputStream is = cr.openInputStream(uri)) {
                 BitmapFactory.decodeStream(is, null, o);
             }
-            int side = Math.min(o.outWidth, o.outHeight);
-            if (side <= 0) return null;
+            int longSide = Math.max(o.outWidth, o.outHeight);
+            if (longSide <= 0) return null;
             o.inJustDecodeBounds = false;
-            o.inSampleSize = Math.max(1, side / (STORED_SIZE * 2));
+            o.inSampleSize = Math.max(1, longSide / 1600);
             Bitmap bm;
             try (InputStream is = cr.openInputStream(uri)) {
                 bm = BitmapFactory.decodeStream(is, null, o);
@@ -63,19 +63,22 @@ final class Avatar {
                 else if (ori == ExifInterface.ORIENTATION_ROTATE_180) rotation = 180;
                 else if (ori == ExifInterface.ORIENTATION_ROTATE_270) rotation = 270;
             } catch (Exception ignored) { }
-
-            int s = Math.min(bm.getWidth(), bm.getHeight());
-            Matrix m = new Matrix();
-            if (rotation != 0) m.postRotate(rotation);
-            float scale = STORED_SIZE / (float) s;
-            m.postScale(scale, scale);
-            Bitmap sq = Bitmap.createBitmap(bm, (bm.getWidth() - s) / 2, (bm.getHeight() - s) / 2, s, s, m, true);
-            ByteArrayOutputStream bo = new ByteArrayOutputStream();
-            sq.compress(Bitmap.CompressFormat.JPEG, 85, bo);
-            return Base64.encodeToString(bo.toByteArray(), Base64.NO_WRAP);
+            if (rotation != 0) {
+                Matrix m = new Matrix();
+                m.postRotate(rotation);
+                bm = Bitmap.createBitmap(bm, 0, 0, bm.getWidth(), bm.getHeight(), m, true);
+            }
+            return bm;
         } catch (Exception e) {
             return null;
         }
+    }
+
+    /** JPEG + base64 of an already square bitmap. */
+    static String toBase64(Bitmap square) {
+        ByteArrayOutputStream bo = new ByteArrayOutputStream();
+        square.compress(Bitmap.CompressFormat.JPEG, 85, bo);
+        return Base64.encodeToString(bo.toByteArray(), Base64.NO_WRAP);
     }
 
     static Bitmap decode(String b64) {

@@ -169,9 +169,9 @@ public class SettingsActivity extends ThemedActivity {
         if (res != RESULT_OK || data == null || data.getData() == null) return;
         Uri uri = data.getData();
         if (req == REQ_PHOTO) {
-            String enc = Avatar.encode(getContentResolver(), uri);
-            if (enc == null) Toast.makeText(this, "画像を読み込めませんでした", Toast.LENGTH_SHORT).show();
-            else { pendingPhoto = enc; showPhoto(); }
+            android.graphics.Bitmap bmp = Avatar.load(getContentResolver(), uri);
+            if (bmp == null) Toast.makeText(this, "画像を読み込めませんでした", Toast.LENGTH_SHORT).show();
+            else cropPhoto(bmp);
         } else if (req == REQ_EXPORT) doExport(uri);
         else if (req == REQ_IMPORT) confirmImport(uri);
     }
@@ -298,6 +298,30 @@ public class SettingsActivity extends ThemedActivity {
         r.addView(b, bl);
         r.addView(x, new LinearLayout.LayoutParams(dp(56), dp(44)));
         box.addView(r);
+    }
+
+    /** Lets the user pan / zoom the picked photo inside a square window, then keeps that square. */
+    private void cropPhoto(android.graphics.Bitmap bmp) {
+        int side = (int) (getResources().getDisplayMetrics().widthPixels * 0.78f);
+        final CropView crop = new CropView(this, bmp);
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setGravity(android.view.Gravity.CENTER_HORIZONTAL);
+        box.setPadding(0, dp(8), 0, 0);
+        box.addView(crop, new LinearLayout.LayoutParams(side, side));
+        TextView hint = new TextView(this);
+        hint.setText("ドラッグで移動、ピンチで拡大・縮小");
+        hint.setTextSize(12);
+        hint.setPadding(0, dp(8), 0, dp(4));
+        box.addView(hint);
+        new AlertDialog.Builder(this).setTitle("正方形に切り取り").setView(box)
+                .setNegativeButton("キャンセル", null)
+                .setPositiveButton("決定", (d, w) -> {
+                    pendingPhoto = Avatar.toBase64(crop.result());
+                    pendingIcon = "";
+                    showPhoto();
+                })
+                .show();
     }
 
     private void showPhoto() {
