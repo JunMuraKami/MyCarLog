@@ -23,17 +23,4 @@
 
 データは端末内にのみ保存され、外部には送信されません。
 
-## ビルド
-Android SDK(compileSdk 34)と JDK 17、Gradle 8.7 が必要です。`local.properties` に `sdk.dir` を設定してください。
-
-```
-gradle :app:assembleDebug
-```
-
-リリース署名をする場合は、キーストアを用意し、次のプロパティを指定します(リポジトリには含めないでください)。
-
-```
-gradle :app:assembleRelease -PreleaseStoreFile=... -PreleaseStorePassword=... -PreleaseKeyAlias=... -PreleaseKeyPassword=...
-```
-
 動作環境: Android 8.0 (API 26) 以上。
