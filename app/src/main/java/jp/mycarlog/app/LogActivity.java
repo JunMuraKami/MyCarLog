@@ -35,7 +35,6 @@ public class LogActivity extends ThemedActivity {
         mode = getIntent().getIntExtra(EXTRA_MODE, MODE_FUEL);
         store = new Store(this);
         setTitle((mode == MODE_FUEL ? "給油ログ" : "メンテナンスログ") + " - " + store.vehicle().name);
-        if (getActionBar() != null) getActionBar().setDisplayHomeAsUpEnabled(true);
         final int pad = dp(16);
 
         LinearLayout root = new LinearLayout(this);
@@ -45,9 +44,11 @@ public class LogActivity extends ThemedActivity {
         summary = new TextView(this);
         summary.setTextSize(14);
         summary.setPadding(pad, dp(10), pad, dp(10));
-        summary.setBackgroundColor(pal.accentBg);
+        summary.setBackground(shape(pal.accentBg, 16));
         summary.setTextColor(pal.text);
-        root.addView(summary);
+        LinearLayout.LayoutParams slp = new LinearLayout.LayoutParams(-1, -2);
+        slp.setMargins(dp(12), dp(4), dp(12), dp(4));
+        root.addView(summary, slp);
 
         if (mode == MODE_FUEL) {
             LinearLayout bar = new LinearLayout(this);
@@ -62,7 +63,9 @@ public class LogActivity extends ThemedActivity {
                     refresh();
                 });
                 tabs.add(tb);
-                bar.addView(tb, new LinearLayout.LayoutParams(0, dp(44), 1f));
+                LinearLayout.LayoutParams tlp = new LinearLayout.LayoutParams(0, dp(42), 1f);
+                tlp.setMargins(dp(4), dp(4), dp(4), dp(4));
+                bar.addView(tb, tlp);
             }
             root.addView(bar);
         }
@@ -105,14 +108,15 @@ public class LogActivity extends ThemedActivity {
         Button add = new Button(this);
         add.setText(mode == MODE_FUEL ? "＋ 給油を記録" : "＋ メンテナンスを記録");
         add.setTextSize(16);
+        pill(add, true);
         add.setOnClickListener(v -> {
             if (mode == MODE_FUEL) editFill(null); else editService(null);
         });
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, dp(60));
-        lp.setMargins(dp(8), dp(4), dp(8), dp(8));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, dp(56));
+        lp.setMargins(dp(12), dp(4), dp(12), dp(12));
         root.addView(add, lp);
 
-        setContentView(root);
+        setContentView(screen(true, 0, null, null, root));
         refresh();
     }
 
@@ -127,7 +131,7 @@ public class LogActivity extends ThemedActivity {
     private void refresh() {
         shown.clear();
         if (mode == MODE_FUEL) {
-            for (int k = 0; k < tabs.size(); k++) tabs.get(k).setEnabled(k != view);
+            for (int k = 0; k < tabs.size(); k++) pill(tabs.get(k), k == view);
             if (view == 0) {
                 List<Fill> f = new ArrayList<>(store.fills);
                 Collections.reverse(f); // newest first

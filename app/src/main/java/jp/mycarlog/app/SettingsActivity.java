@@ -33,7 +33,6 @@ public class SettingsActivity extends ThemedActivity {
         super.onCreate(b);
         GRAY = pal.gray; TEXT = pal.text;
         setTitle("設定");
-        if (getActionBar() != null) getActionBar().setDisplayHomeAsUpEnabled(true);
 
         ScrollView sv = new ScrollView(this);
         sv.setBackgroundColor(pal.bg);
@@ -41,7 +40,7 @@ public class SettingsActivity extends ThemedActivity {
         content.setOrientation(LinearLayout.VERTICAL);
         content.setPadding(dp(12), dp(8), dp(12), dp(16));
         sv.addView(content);
-        setContentView(sv);
+        setContentView(screen(true, 0, null, null, sv));
         render();
     }
 
@@ -383,7 +382,7 @@ public class SettingsActivity extends ThemedActivity {
         r.setPadding(dp(16), dp(12), dp(16), dp(12));
         GradientDrawable bg = new GradientDrawable();
         bg.setColor(pal.card);
-        bg.setCornerRadius(dp(10));
+        bg.setCornerRadius(dp(16));
         r.setBackground(bg);
         r.setOnClickListener(v -> onTap.run());
         TextView t = new TextView(this);
@@ -407,8 +406,12 @@ public class SettingsActivity extends ThemedActivity {
     private void addButton(String label, Runnable onTap) {
         Button b = new Button(this);
         b.setText(label);
+        pill(b, false);
         b.setOnClickListener(v -> onTap.run());
-        content.addView(b, new LinearLayout.LayoutParams(-1, dp(52)));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, dp(52));
+        lp.topMargin = dp(4);
+        lp.bottomMargin = dp(4);
+        content.addView(b, lp);
     }
 
     private LinearLayout dialogBox() {

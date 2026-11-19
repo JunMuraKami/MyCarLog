@@ -10,6 +10,10 @@ final class AppTheme {
         final boolean dark;
         final int bg, card, text, gray, red, orange, accent, accentBg, redBg, orangeBg, bar;
 
+        int onAccent() { return luminance(accent) > 0.6 ? 0xFF10151C : 0xFFFFFFFF; }
+
+        int tonal() { return blend(accent, bg, 0.16f); }
+
         Pal(String id, String name, boolean dark, int bg, int card, int text, int gray,
             int red, int orange, int accent, int accentBg, int redBg, int orangeBg, int bar) {
             this.id = id; this.name = name; this.dark = dark;
@@ -29,10 +33,22 @@ final class AppTheme {
         new Pal("green", "グリーン", false, 0xFFECF4ED, 0xFFFFFFFF, 0xFF1B2A1C, 0xFF566657,
                 0xFFD32F2F, 0xFFEF6C00, 0xFF2E7D32, 0xFFDCEFDD, 0xFFFDECEA, 0xFFFFF3E0, 0xFF2E7D32),
         new Pal("sport", "スポーツ", true, 0xFF14100F, 0xFF241B1A, 0xFFF2E9E7, 0xFFB09E9B,
-                0xFFFF5252, 0xFFFFB74D, 0xFFFF8A80, 0xFF3A1F1D, 0xFF3A1717, 0xFF352814, 0xFFB71C1C),
+                0xFFFF5252, 0xFFFFB74D, 0xFFE53935, 0xFF3A1F1D, 0xFF3A1717, 0xFF352814, 0xFFB71C1C),
     };
 
     private AppTheme() { }
+
+    static int blend(int a, int b, float t) {
+        return android.graphics.Color.rgb(
+                (int) (android.graphics.Color.red(a) * t + android.graphics.Color.red(b) * (1 - t)),
+                (int) (android.graphics.Color.green(a) * t + android.graphics.Color.green(b) * (1 - t)),
+                (int) (android.graphics.Color.blue(a) * t + android.graphics.Color.blue(b) * (1 - t)));
+    }
+
+    static double luminance(int c) {
+        return (0.299 * android.graphics.Color.red(c) + 0.587 * android.graphics.Color.green(c)
+                + 0.114 * android.graphics.Color.blue(c)) / 255.0;
+    }
 
     private static SharedPreferences sp(Context c) {
         return c.getSharedPreferences("ui", Context.MODE_PRIVATE);

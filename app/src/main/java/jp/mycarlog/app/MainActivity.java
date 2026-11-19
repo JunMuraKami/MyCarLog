@@ -36,7 +36,6 @@ public class MainActivity extends ThemedActivity {
 
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundColor(pal.bg);
 
         ScrollView sv = new ScrollView(this);
         content = new LinearLayout(this);
@@ -46,12 +45,17 @@ public class MainActivity extends ThemedActivity {
         root.addView(sv, new LinearLayout.LayoutParams(-1, 0, 1f));
 
         LinearLayout bar = new LinearLayout(this);
-        bar.setPadding(dp(8), dp(4), dp(8), dp(8));
-        bar.addView(navButton("給油", LogActivity.MODE_FUEL), new LinearLayout.LayoutParams(0, dp(64), 1f));
-        bar.addView(navButton("メンテナンス", LogActivity.MODE_SERVICE), new LinearLayout.LayoutParams(0, dp(64), 1f));
+        bar.setPadding(dp(12), dp(4), dp(12), dp(12));
+        LinearLayout.LayoutParams b1 = new LinearLayout.LayoutParams(0, dp(56), 1f);
+        b1.rightMargin = dp(6);
+        LinearLayout.LayoutParams b2 = new LinearLayout.LayoutParams(0, dp(56), 1f);
+        b2.leftMargin = dp(6);
+        bar.addView(navButton("給油", LogActivity.MODE_FUEL), b1);
+        bar.addView(navButton("メンテナンス", LogActivity.MODE_SERVICE), b2);
         root.addView(bar);
 
-        setContentView(root);
+        setContentView(screen(false, R.drawable.ic_settings, "設定",
+                () -> startActivity(new Intent(this, SettingsActivity.class)), root));
 
         if (Build.VERSION.SDK_INT >= 33
                 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED)
@@ -71,7 +75,8 @@ public class MainActivity extends ThemedActivity {
     private Button navButton(String label, int mode) {
         Button btn = new Button(this);
         btn.setText(label);
-        btn.setTextSize(18);
+        btn.setTextSize(17);
+        pill(btn, true);
         btn.setOnClickListener(v -> openLog(mode));
         return btn;
     }
@@ -114,7 +119,7 @@ public class MainActivity extends ThemedActivity {
             GradientDrawable bg = new GradientDrawable();
             bg.setColor(pal.accentBg);
             bg.setStroke(dp(1), pal.accent);
-            bg.setCornerRadius(dp(10));
+            bg.setCornerRadius(dp(16));
             banner.setBackground(bg);
             TextView t = text("新しいバージョン " + upd.version + " があります", 15, pal.accent);
             t.setTypeface(Typeface.DEFAULT_BOLD);
@@ -135,7 +140,7 @@ public class MainActivity extends ThemedActivity {
             GradientDrawable bg = new GradientDrawable();
             bg.setColor(d.level == 2 ? pal.redBg : pal.orangeBg);
             bg.setStroke(dp(1), color);
-            bg.setCornerRadius(dp(10));
+            bg.setCornerRadius(dp(16));
             banner.setBackground(bg);
             TextView t = text(d.vehicle.name + "の" + d.s.label()
                     + (d.level == 2 ? "の期限が過ぎています" : "が近づいています"), 15, color);
@@ -255,11 +260,7 @@ public class MainActivity extends ThemedActivity {
         LinearLayout c = new LinearLayout(this);
         c.setOrientation(LinearLayout.VERTICAL);
         c.setPadding(dp(16), dp(14), dp(16), dp(16));
-        GradientDrawable bg = new GradientDrawable();
-        bg.setColor(pal.card);
-        bg.setCornerRadius(dp(12));
-        c.setBackground(bg);
-        c.setElevation(dp(2));
+        cardStyle(c, 20);
         c.setOnClickListener(v -> onTap.run());
         TextView t = text(title, 18, TEXT);
         t.setTypeface(Typeface.DEFAULT_BOLD);
