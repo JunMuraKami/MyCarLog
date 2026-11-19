@@ -106,56 +106,94 @@ public class MainActivity extends ThemedActivity {
 
     // ---- rendering ----
 
+    private void setNoticesCollapsed(boolean c) {
+        getSharedPreferences("ui", MODE_PRIVATE).edit().putBoolean("noticesCollapsed", c).apply();
+        render();
+    }
+
+    private String noticeTitle(Store.Due d) {
+        return d.vehicle.name + "の" + d.s.label()
+                + (d.level == 2 ? "の期限が過ぎています" : "が近づいています");
+    }
+
+    private void addNotice(String title, String detail, int fg, int bgc, Runnable tap) {
+        LinearLayout banner = new LinearLayout(this);
+        banner.setOrientation(LinearLayout.VERTICAL);
+        banner.setPadding(dp(14), dp(10), dp(14), dp(10));
+        GradientDrawable bg = new GradientDrawable();
+        bg.setColor(bgc);
+        bg.setStroke(dp(1), fg);
+        bg.setCornerRadius(dp(16));
+        banner.setBackground(bg);
+        TextView t = text(title, 15, fg);
+        t.setTypeface(Typeface.DEFAULT_BOLD);
+        banner.addView(t);
+        banner.addView(text(detail, 13, fg));
+        banner.setOnClickListener(v -> tap.run());
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
+        lp.bottomMargin = dp(8);
+        content.addView(banner, lp);
+    }
+
+
     private void render() {
         store = new Store(this);
         invalidateOptionsMenu();
         content.removeAllViews();
 
-        // ---- app update available (from GitHub Releases) ----
+        // ---- notices: update + reminders, collapsible into one small bar ----
         final Updater.Info upd = Updater.cached(this);
-        if (upd != null) {
-            LinearLayout banner = new LinearLayout(this);
-            banner.setOrientation(LinearLayout.VERTICAL);
-            banner.setPadding(dp(14), dp(10), dp(14), dp(10));
+        final List<Store.Due> alerts = store.alerts(LocalDate.now());
+        final int total = alerts.size() + (upd != null ? 1 : 0);
+        boolean collapsed = total >= 2
+                && getSharedPreferences("ui", MODE_PRIVATE).getBoolean("noticesCollapsed", false);
+        if (collapsed) {
+            String first;
+            int fg, bgc;
+            if (!alerts.isEmpty()) {
+                Store.Due d = alerts.get(0);
+                first = noticeTitle(d);
+                fg = d.level == 2 ? RED : ORANGE;
+                bgc = d.level == 2 ? pal.redBg : pal.orangeBg;
+            } else {
+                first = "新しいバージョン " + upd.version + " があります";
+                fg = pal.accent;
+                bgc = pal.accentBg;
+            }
+            LinearLayout bar = new LinearLayout(this);
+            bar.setGravity(Gravity.CENTER_VERTICAL);
+            bar.setPadding(dp(14), dp(8), dp(14), dp(8));
             GradientDrawable bg = new GradientDrawable();
-            bg.setColor(pal.accentBg);
-            bg.setStroke(dp(1), pal.accent);
+            bg.setColor(bgc);
+            bg.setStroke(dp(1), fg);
             bg.setCornerRadius(dp(16));
-            banner.setBackground(bg);
-            TextView t = text("新しいバージョン " + upd.version + " があります", 15, pal.accent);
+            bar.setBackground(bg);
+            TextView t = text(first + "  ほか" + (total - 1) + "件", 13, fg);
             t.setTypeface(Typeface.DEFAULT_BOLD);
-            banner.addView(t);
-            banner.addView(text("タップして更新", 13, pal.accent));
-            banner.setOnClickListener(v -> Updater.prompt(this, upd));
+            bar.addView(t, new LinearLayout.LayoutParams(0, -2, 1f));
+            bar.addView(text("▼", 12, fg));
+            bar.setOnClickListener(v -> setNoticesCollapsed(false));
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
             lp.bottomMargin = dp(8);
-            content.addView(banner, lp);
-        }
-
-        // ---- reminders for every vehicle ----
-        for (Store.Due d : store.alerts(LocalDate.now())) {
-            int color = d.level == 2 ? RED : ORANGE;
-            LinearLayout banner = new LinearLayout(this);
-            banner.setOrientation(LinearLayout.VERTICAL);
-            banner.setPadding(dp(14), dp(10), dp(14), dp(10));
-            GradientDrawable bg = new GradientDrawable();
-            bg.setColor(d.level == 2 ? pal.redBg : pal.orangeBg);
-            bg.setStroke(dp(1), color);
-            bg.setCornerRadius(dp(16));
-            banner.setBackground(bg);
-            TextView t = text(d.vehicle.name + "の" + d.s.label()
-                    + (d.level == 2 ? "の期限が過ぎています" : "が近づいています"), 15, color);
-            t.setTypeface(Typeface.DEFAULT_BOLD);
-            banner.addView(t);
-            banner.addView(text(d.detail, 13, color));
-            final String vid = d.vehicle.id;
-            banner.setOnClickListener(v -> {
-                store.select(vid);
-                render();
-            });
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
-            lp.bottomMargin = dp(8);
-            content.addView(banner, lp);
+            content.addView(bar, lp);
+        } else {
+            if (total >= 2) {
+                TextView toggle = text("通知 " + total + "件  ▲ 小さくする", 12, pal.accent);
+                toggle.setPadding(dp(8), dp(2), dp(8), dp(6));
+                toggle.setOnClickListener(v -> setNoticesCollapsed(true));
+                LinearLayout.LayoutParams tl = new LinearLayout.LayoutParams(-2, -2);
+                tl.gravity = Gravity.END;
+                content.addView(toggle, tl);
+            }
+            if (upd != null)
+                addNotice("新しいバージョン " + upd.version + " があります", "タップして更新",
+                        pal.accent, pal.accentBg, () -> Updater.prompt(this, upd));
+            for (final Store.Due d : alerts)
+                addNotice(noticeTitle(d), d.detail, d.level == 2 ? RED : ORANGE,
+                        d.level == 2 ? pal.redBg : pal.orangeBg, () -> {
+                            store.select(d.vehicle.id);
+                            render();
+                        });
         }
 
         // ---- vehicle picker and its details ----
