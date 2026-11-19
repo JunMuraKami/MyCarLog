@@ -4,7 +4,9 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.os.Bundle;
+import android.text.Editable;
 import android.text.InputType;
+import android.text.TextWatcher;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -233,12 +235,70 @@ public class LogActivity extends Activity {
 
     // ---- editors ----
 
+    /** Number text with at most `dec` decimals and no trailing zeros ("." as the separator). */
+    private static String trim(double v, int dec) {
+        String s = String.format(Locale.US, "%." + dec + "f", v);
+        if (s.contains(".")) s = s.replaceAll("0+$", "").replaceAll("\\.$", "");
+        return s;
+    }
+
+    private static double valueOf(EditText e) {
+        try {
+            return Double.parseDouble(e.getText().toString().trim());
+        } catch (NumberFormatException ex) {
+            return 0;
+        }
+    }
+
+    /**
+     * Liters, unit price and cost: once two of them are entered, the third is filled in.
+     * The two fields edited most recently are the inputs; the remaining one is computed.
+     * When editing an existing record (all three filled), the unit price stays fixed.
+     */
+    private void bindFuelCalc(final EditText liters, final EditText price, final EditText cost) {
+        final EditText[] all = { liters, price, cost };
+        final List<EditText> recent = new ArrayList<>();
+        final boolean[] busy = { false };
+        for (final EditText e : all) {
+            e.addTextChangedListener(new TextWatcher() {
+                public void beforeTextChanged(CharSequence s, int a, int b, int c) { }
+                public void onTextChanged(CharSequence s, int a, int b, int c) { }
+                public void afterTextChanged(Editable s) {
+                    if (busy[0]) return;
+                    recent.remove(e);
+                    if (valueOf(e) > 0) recent.add(0, e);
+                    EditText target = null;
+                    if (recent.size() >= 2) {
+                        for (EditText x : all) if (x != recent.get(0) && x != recent.get(1)) target = x;
+                    } else if (recent.size() == 1 && valueOf(liters) > 0 && valueOf(price) > 0
+                            && valueOf(cost) > 0) {
+                        target = (e == cost) ? liters : cost;
+                    }
+                    if (target == null) return;
+                    double l = valueOf(liters), p = valueOf(price), c = valueOf(cost);
+                    String out;
+                    if (target == cost) out = trim(Math.round(l * p), 0);
+                    else if (target == price) out = trim(c / l, 1);
+                    else out = trim(c / p, 2);
+                    busy[0] = true;
+                    target.setText(out);
+                    busy[0] = false;
+                }
+            });
+        }
+    }
+
     private void editFill(final Fill edit) {
         LinearLayout box = dialogBox();
         String[] date = datePicker(box, edit != null ? edit.date : null);
         EditText odo = Ui.numField(this, box, "総走行距離 (km)", edit != null ? num(edit.odo) : defaultOdo());
         EditText liters = Ui.numField(this, box, "給油量 (L)", edit != null ? num(edit.liters) : "");
+        EditText price = Ui.numField(this, box, "ガソリン単価 (円/L)",
+                edit != null && edit.liters > 0 ? trim(edit.cost / edit.liters, 1) : "");
         EditText cost = Ui.numField(this, box, "金額 (円)", edit != null ? num(edit.cost) : "");
+        TextView calcNote = Ui.label(this, box, "給油量・単価・金額のうち2つを入力すると、残りを自動で計算します。");
+        calcNote.setTextSize(12);
+        bindFuelCalc(liters, price, cost);
         CheckBox full = new CheckBox(this);
         full.setText("満タン給油");
         full.setChecked(edit == null || edit.full);
