@@ -40,7 +40,7 @@ public final class Reminder {
         List<String> lines = new ArrayList<>();
         for (Store.Due d : store.alerts(LocalDate.now()))
             lines.add(d.vehicle.name + "の" + d.s.label()
-                    + (d.level == 2 ? "の期限を過ぎています" : "が近づいています"));
+                    + (d.level == 2 ? "の期限が過ぎています" : "が近づいています"));
         NotificationManager nm = c.getSystemService(NotificationManager.class);
         if (lines.isEmpty()) {
             nm.cancel(NOTIFY_ID);
