@@ -48,7 +48,7 @@ public class LogActivity extends Activity {
         if (mode == MODE_FUEL) {
             LinearLayout bar = new LinearLayout(this);
             bar.setPadding(dp(8), dp(4), dp(8), 0);
-            String[] names = { "記録", "月別", "年別" };
+            String[] names = { "履歴", "月別", "年別" };
             for (int k = 0; k < names.length; k++) {
                 final int target = k;
                 Button tb = new Button(this);
