@@ -236,12 +236,9 @@ public class MainActivity extends ThemedActivity {
             LinearLayout item = new LinearLayout(this);
             item.setOrientation(LinearLayout.VERTICAL);
             item.setGravity(Gravity.CENTER_HORIZONTAL);
-            item.setPadding(dp(6), 0, dp(6), 0);
+            item.setPadding(dp(2), 0, dp(2), 0);
             item.addView(Avatar.view(this, v.name, v.photo, v.icon, 68, sel, pal));
             TextView n = text(v.name, 12, sel ? pal.accent : GRAY);
-            n.setSingleLine(true);
-            n.setEllipsize(android.text.TextUtils.TruncateAt.END);
-            n.setMaxWidth(dp(110));
             n.setGravity(Gravity.CENTER);
             n.setPadding(0, dp(4), 0, 0);
             if (sel) n.setTypeface(Typeface.DEFAULT_BOLD);
@@ -252,7 +249,8 @@ public class MainActivity extends ThemedActivity {
                 store.select(v.id);
                 render();
             });
-            row.addView(item);
+            // Fixed cell width so the whole name shows (long names wrap onto a second line).
+            row.addView(item, new LinearLayout.LayoutParams(dp(88), -2));
         }
         if (soldCount > 0) {
             TextView chip = text(showSold ? "過去の車両を隠す" : "過去の車両 " + soldCount, 12, pal.accent);
