@@ -82,7 +82,9 @@ public class MainActivity extends Activity {
     // ---- menu: vehicle management ----
 
     @Override public boolean onCreateOptionsMenu(Menu m) {
-        m.add(0, MENU_SETTINGS, 0, "設定");
+        m.add(0, MENU_SETTINGS, 0, "設定")
+                .setIcon(R.drawable.ic_settings)
+                .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
         return true;
     }
 
