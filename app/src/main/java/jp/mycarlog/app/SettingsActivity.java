@@ -68,6 +68,10 @@ public class SettingsActivity extends Activity {
         for (ServiceType t : store.types) row(t.name, t.summary(), TEXT, () -> editType(t));
         addButton("＋ 項目を追加", () -> editType(null));
 
+        header("アプリについて");
+        note("バージョン " + Updater.current(this) + "  /  GitHub のリリースから更新を受け取ります。");
+        addButton("更新を確認", this::checkUpdate);
+
         header("データ");
         note("車両・給油・メンテナンス・項目設定のすべてをファイルに書き出し/読み込みします。");
         addButton("エクスポート(ファイルに保存)", () -> {
@@ -80,6 +84,18 @@ public class SettingsActivity extends Activity {
             Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT)
                     .addCategory(Intent.CATEGORY_OPENABLE).setType("*/*");
             startActivityForResult(i, REQ_IMPORT);
+        });
+    }
+
+    // ---- app update ----
+
+    private void checkUpdate() {
+        Toast.makeText(this, "確認中…", Toast.LENGTH_SHORT).show();
+        Updater.check(this, (latest, ok) -> {
+            if (isFinishing()) return;
+            if (!ok) Toast.makeText(this, "確認できませんでした(通信を確認してください)", Toast.LENGTH_LONG).show();
+            else if (latest == null) Toast.makeText(this, "最新のバージョンです", Toast.LENGTH_SHORT).show();
+            else Updater.prompt(this, latest);
         });
     }
 

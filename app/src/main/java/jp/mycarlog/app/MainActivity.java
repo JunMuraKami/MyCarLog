@@ -61,6 +61,10 @@ public class MainActivity extends Activity {
     @Override protected void onResume() {
         super.onResume();
         render(); // data may have changed in a log page
+        if (Updater.due(this))
+            Updater.check(this, (latest, ok) -> {
+                if (latest != null && !isFinishing()) render();
+            });
     }
 
     private Button navButton(String label, int mode) {
@@ -97,6 +101,27 @@ public class MainActivity extends Activity {
         store = new Store(this);
         invalidateOptionsMenu();
         content.removeAllViews();
+
+        // ---- app update available (from GitHub Releases) ----
+        final Updater.Info upd = Updater.cached(this);
+        if (upd != null) {
+            LinearLayout banner = new LinearLayout(this);
+            banner.setOrientation(LinearLayout.VERTICAL);
+            banner.setPadding(dp(14), dp(10), dp(14), dp(10));
+            GradientDrawable bg = new GradientDrawable();
+            bg.setColor(0xFFE3F2FD);
+            bg.setStroke(dp(1), 0xFF1976D2);
+            bg.setCornerRadius(dp(10));
+            banner.setBackground(bg);
+            TextView t = text("新しいバージョン " + upd.version + " があります", 15, 0xFF1976D2);
+            t.setTypeface(Typeface.DEFAULT_BOLD);
+            banner.addView(t);
+            banner.addView(text("タップして更新", 13, 0xFF1976D2));
+            banner.setOnClickListener(v -> Updater.prompt(this, upd));
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
+            lp.bottomMargin = dp(8);
+            content.addView(banner, lp);
+        }
 
         // ---- reminders for every vehicle ----
         for (Store.Due d : store.alerts(LocalDate.now())) {
