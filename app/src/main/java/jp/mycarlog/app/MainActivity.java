@@ -212,46 +212,48 @@ public class MainActivity extends ThemedActivity {
         }
     }
 
-    /** Dropdown of vehicles: those still owned first, then ones let go. Managed in settings. */
+    /** Row of round vehicle icons (owned first, then ones let go) and the selected vehicle's name. */
     private View vehiclePicker() {
         final List<Vehicle> order = new ArrayList<>();
         for (Vehicle v : store.vehicles) if (v.owned) order.add(v);
         for (Vehicle v : store.vehicles) if (!v.owned) order.add(v);
-        List<String> names = new ArrayList<>();
-        int sel = 0;
-        for (int i = 0; i < order.size(); i++) {
-            names.add(order.get(i).name + (order.get(i).owned ? "" : "(手放し)"));
-            if (order.get(i).id.equals(store.vehicleId)) sel = i;
-        }
 
-        Spinner sp = new Spinner(this);
-        ArrayAdapter<String> ad = new ArrayAdapter<String>(this,
-                android.R.layout.simple_spinner_item, names) {
-            @Override public View getView(int pos, View v, android.view.ViewGroup p) {
-                TextView t = (TextView) super.getView(pos, v, p);
-                t.setTextSize(22);
-                t.setTypeface(Typeface.DEFAULT_BOLD);
-                t.setTextColor(TEXT);
-                return t;
-            }
-        };
-        ad.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        sp.setAdapter(ad);
-        sp.setSelection(sel, false);
-        final int current = sel;
-        sp.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            public void onItemSelected(AdapterView<?> p, View v, int i, long id) {
-                if (i == current) return; // initial callback / no change
-                store.select(order.get(i).id);
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        HorizontalScrollView hs = new HorizontalScrollView(this);
+        hs.setHorizontalScrollBarEnabled(false);
+        LinearLayout row = new LinearLayout(this);
+        row.setPadding(dp(2), dp(4), dp(2), dp(4));
+        for (final Vehicle v : order) {
+            boolean sel = v.id.equals(store.vehicleId);
+            LinearLayout item = new LinearLayout(this);
+            item.setOrientation(LinearLayout.VERTICAL);
+            item.setGravity(Gravity.CENTER_HORIZONTAL);
+            item.setPadding(dp(6), 0, dp(6), 0);
+            item.addView(Avatar.view(this, v.name, v.photo, 68, sel, pal));
+            TextView n = text(v.name + (v.owned ? "" : "(手放し)"), 12, sel ? pal.accent : GRAY);
+            n.setSingleLine(true);
+            n.setEllipsize(android.text.TextUtils.TruncateAt.END);
+            n.setMaxWidth(dp(110));
+            n.setGravity(Gravity.CENTER);
+            n.setPadding(0, dp(4), 0, 0);
+            if (sel) n.setTypeface(Typeface.DEFAULT_BOLD);
+            item.addView(n);
+            if (!v.owned) item.setAlpha(0.6f);
+            item.setOnClickListener(x -> {
+                if (v.id.equals(store.vehicleId)) return;
+                store.select(v.id);
                 render();
-            }
-            public void onNothingSelected(AdapterView<?> p) { }
-        });
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
-        lp.topMargin = dp(4);
-        lp.bottomMargin = dp(8);
-        sp.setLayoutParams(lp);
-        return sp;
+            });
+            row.addView(item);
+        }
+        hs.addView(row);
+        box.addView(hs);
+        TextView title = text(store.vehicle().name, 24, TEXT);
+        title.setTypeface(Typeface.DEFAULT_BOLD);
+        title.setPadding(dp(4), dp(8), 0, dp(2));
+        box.addView(title);
+        return box;
     }
 
     // ---- small view helpers ----

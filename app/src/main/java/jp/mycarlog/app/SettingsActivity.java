@@ -15,6 +15,7 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import android.text.InputType;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -59,7 +60,8 @@ public class SettingsActivity extends ThemedActivity {
         header("車両");
         for (Vehicle v : store.vehicles) {
             String sub = v.subtitle();
-            row(v.name, sub, v.owned ? TEXT : GRAY, () -> editVehicle(v));
+            row(v.name, sub, v.owned ? TEXT : GRAY, () -> editVehicle(v),
+                    Avatar.view(this, v.name, v.photo, 52, false, pal));
         }
         addButton("＋ 車両を追加", () -> editVehicle(null));
 
@@ -147,14 +149,21 @@ public class SettingsActivity extends ThemedActivity {
 
     // ---- export / import ----
 
-    private static final int REQ_EXPORT = 11, REQ_IMPORT = 12;
+    private static final int REQ_EXPORT = 11, REQ_IMPORT = 12, REQ_PHOTO = 13;
+    private String pendingPhoto;      // null = unchanged, "" = removed
+    private LinearLayout photoBox;
+    private Vehicle photoVehicle;
     private static final String[] KEYS = { "vehicles", "types", "fills", "services" };
 
     @Override protected void onActivityResult(int req, int res, Intent data) {
         super.onActivityResult(req, res, data);
         if (res != RESULT_OK || data == null || data.getData() == null) return;
         Uri uri = data.getData();
-        if (req == REQ_EXPORT) doExport(uri);
+        if (req == REQ_PHOTO) {
+            String enc = Avatar.encode(getContentResolver(), uri);
+            if (enc == null) Toast.makeText(this, "画像を読み込めませんでした", Toast.LENGTH_SHORT).show();
+            else { pendingPhoto = enc; showPhoto(); }
+        } else if (req == REQ_EXPORT) doExport(uri);
         else if (req == REQ_IMPORT) confirmImport(uri);
     }
 
@@ -216,9 +225,39 @@ public class SettingsActivity extends ThemedActivity {
 
     // ---- vehicles ----
 
+    private void showPhoto() {
+        photoBox.removeAllViews();
+        String p = pendingPhoto != null ? pendingPhoto : photoVehicle.photo;
+        photoBox.addView(Avatar.view(this, photoVehicle.name, p, 96, false, pal));
+    }
+
     private void editVehicle(final Vehicle edit) {
         LinearLayout box = dialogBox();
         final Vehicle v = edit != null ? edit : new Vehicle(null, "");
+        photoVehicle = v;
+        pendingPhoto = null;
+        photoBox = new LinearLayout(this);
+        photoBox.setOrientation(LinearLayout.VERTICAL);
+        photoBox.setGravity(android.view.Gravity.CENTER_HORIZONTAL);
+        box.addView(photoBox);
+        LinearLayout photoBtns = new LinearLayout(this);
+        photoBtns.setGravity(android.view.Gravity.CENTER_HORIZONTAL);
+        Button pick = new Button(this);
+        pick.setText("写真を選ぶ");
+        pill(pick, false);
+        pick.setOnClickListener(x -> startActivityForResult(
+                new Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE)
+                        .setType("image/*"), REQ_PHOTO));
+        Button clear = new Button(this);
+        clear.setText("写真を外す");
+        pill(clear, false);
+        clear.setOnClickListener(x -> { pendingPhoto = ""; showPhoto(); });
+        LinearLayout.LayoutParams pl = new LinearLayout.LayoutParams(0, dp(44), 1f);
+        pl.setMargins(dp(4), dp(8), dp(4), dp(4));
+        photoBtns.addView(pick, pl);
+        photoBtns.addView(clear, pl);
+        box.addView(photoBtns);
+        showPhoto();
         EditText name = Ui.field(this, box, "車両名(ホームでの表示名)", v.name, InputType.TYPE_CLASS_TEXT);
         EditText make = Ui.field(this, box, "メーカー", v.make, InputType.TYPE_CLASS_TEXT);
         EditText model = Ui.field(this, box, "車種", v.model, InputType.TYPE_CLASS_TEXT);
@@ -286,6 +325,7 @@ public class SettingsActivity extends ThemedActivity {
             v.plate = plate.getText().toString().trim();
             v.vin = vin.getText().toString().trim();
             v.owned = owned.isChecked();
+            if (pendingPhoto != null) v.photo = pendingPhoto;
             if (edit == null) store.addVehicle(v); else store.save();
             dlg.dismiss();
             render();
@@ -377,8 +417,20 @@ public class SettingsActivity extends ThemedActivity {
     }
 
     private void row(String title, String sub, int color, Runnable onTap) {
+        row(title, sub, color, onTap, null);
+    }
+
+    private void row(String title, String sub, int color, Runnable onTap, View lead) {
         LinearLayout r = new LinearLayout(this);
-        r.setOrientation(LinearLayout.VERTICAL);
+        r.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        LinearLayout col = new LinearLayout(this);
+        col.setOrientation(LinearLayout.VERTICAL);
+        if (lead != null) {
+            LinearLayout.LayoutParams ll = new LinearLayout.LayoutParams(dp(52), dp(52));
+            ll.rightMargin = dp(14);
+            r.addView(lead, ll);
+        }
+        r.addView(col, new LinearLayout.LayoutParams(0, -2, 1f));
         r.setPadding(dp(16), dp(12), dp(16), dp(12));
         GradientDrawable bg = new GradientDrawable();
         bg.setColor(pal.card);
@@ -390,13 +442,13 @@ public class SettingsActivity extends ThemedActivity {
         t.setTextSize(16);
         t.setTypeface(Typeface.DEFAULT_BOLD);
         t.setTextColor(color);
-        r.addView(t);
+        col.addView(t);
         if (!sub.isEmpty()) {
             TextView s = new TextView(this);
             s.setText(sub);
             s.setTextSize(13);
             s.setTextColor(GRAY);
-            r.addView(s);
+            col.addView(s);
         }
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
         lp.bottomMargin = dp(6);
