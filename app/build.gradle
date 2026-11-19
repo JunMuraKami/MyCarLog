@@ -1,0 +1,40 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'jp.mycarlog.app'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'jp.mycarlog.app'
+        minSdk 26
+        targetSdk 34
+        versionCode 11
+        versionName '1.5.3'
+    }
+
+    // Release signing is optional: pass -PreleaseStoreFile=... -PreleaseStorePassword=...
+    // -PreleaseKeyAlias=... -PreleaseKeyPassword=... on the command line (never commit them).
+    signingConfigs {
+        if (project.hasProperty('releaseStoreFile')) {
+            release {
+                storeFile file(project.property('releaseStoreFile'))
+                storePassword project.property('releaseStorePassword')
+                keyAlias project.property('releaseKeyAlias')
+                keyPassword project.property('releaseKeyPassword')
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig project.hasProperty('releaseStoreFile') ? signingConfigs.release : signingConfigs.debug
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
