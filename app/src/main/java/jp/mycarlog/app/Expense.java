@@ -6,7 +6,7 @@ import org.json.JSONObject;
 /** One other expense: tax, insurance, parts bought, parking, ... */
 public class Expense {
     public static final String[] CATEGORIES =
-            {"税金", "保険", "車検", "パーツ購入", "駐車場", "高速料金", "その他"};
+            {"税金", "保険", "パーツ購入", "駐車場", "高速料金", "その他"};
 
     public String vehicle;     // Vehicle.id
     public String date;        // yyyy-MM-dd
