@@ -22,6 +22,8 @@ public class LogActivity extends Activity {
 
     private Store store;
     private int mode;
+    private int view = 0; // fuel only: 0 records, 1 monthly totals, 2 yearly totals
+    private final List<Button> tabs = new ArrayList<>();
     private TextView summary;
     private BaseAdapter adapter;
     private final List<Object> shown = new ArrayList<>();
@@ -43,6 +45,24 @@ public class LogActivity extends Activity {
         summary.setBackgroundColor(0xFFE3F2FD);
         root.addView(summary);
 
+        if (mode == MODE_FUEL) {
+            LinearLayout bar = new LinearLayout(this);
+            bar.setPadding(dp(8), dp(4), dp(8), 0);
+            String[] names = { "記録", "月別", "年別" };
+            for (int k = 0; k < names.length; k++) {
+                final int target = k;
+                Button tb = new Button(this);
+                tb.setText(names[k]);
+                tb.setOnClickListener(v -> {
+                    view = target;
+                    refresh();
+                });
+                tabs.add(tb);
+                bar.addView(tb, new LinearLayout.LayoutParams(0, dp(44), 1f));
+            }
+            root.addView(bar);
+        }
+
         ListView list = new ListView(this);
         adapter = new BaseAdapter() {
             public int getCount() { return shown.size(); }
@@ -53,14 +73,22 @@ public class LogActivity extends Activity {
                 t.setPadding(pad, dp(10), pad, dp(10));
                 t.setTextSize(15);
                 Object o = shown.get(i);
-                t.setText(o instanceof Fill ? fillText((Fill) o) : serviceText((Service) o));
+                if (o instanceof FuelStats.Period) {
+                    FuelStats.Period q = (FuelStats.Period) o;
+                    String l2 = q.line2();
+                    String head = view == 1 ? q.key.replace("-", "年") + "月" : q.key + "年";
+                    t.setText(head + "\n" + q.line1() + (l2.isEmpty() ? "" : "\n" + l2));
+                } else {
+                    t.setText(o instanceof Fill ? fillText((Fill) o) : serviceText((Service) o));
+                }
                 return t;
             }
         };
         list.setAdapter(adapter);
         list.setOnItemClickListener((a, v, i, id) -> {
             Object o = shown.get(i);
-            if (o instanceof Fill) editFill((Fill) o); else editService((Service) o);
+            if (o instanceof Fill) editFill((Fill) o);
+            else if (o instanceof Service) editService((Service) o);
         });
         TextView empty = new TextView(this);
         empty.setText("記録がありません。下のボタンから追加してください。");
@@ -94,11 +122,18 @@ public class LogActivity extends Activity {
     private void refresh() {
         shown.clear();
         if (mode == MODE_FUEL) {
-            List<Fill> f = new ArrayList<>(store.fills);
-            Collections.reverse(f); // newest first
-            shown.addAll(f);
-            summary.setText(String.format(Locale.JAPAN, "総給油費用: ¥%,.0f(%d回)",
-                    store.totalCost(), store.fills.size()));
+            for (int k = 0; k < tabs.size(); k++) tabs.get(k).setEnabled(k != view);
+            if (view == 0) {
+                List<Fill> f = new ArrayList<>(store.fills);
+                Collections.reverse(f); // newest first
+                shown.addAll(f);
+            } else {
+                shown.addAll(FuelStats.compute(store.fills, view == 1));
+            }
+            double liters = 0;
+            for (Fill f : store.fills) liters += f.liters;
+            summary.setText(String.format(Locale.JAPAN, "合計: %.2f L ・ ¥%,.0f(%d回)",
+                    liters, store.totalCost(), store.fills.size()));
         } else {
             shown.addAll(store.services);
             summary.setText(String.format(Locale.JAPAN, "総整備費用: ¥%,.0f(%d件)",

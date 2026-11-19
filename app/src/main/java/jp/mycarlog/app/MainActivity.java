@@ -176,8 +176,15 @@ public class MainActivity extends Activity {
                 : String.format(Locale.JAPAN, "¥%.0f/L(%s)", last.cost / last.liters, last.date));
         if (last != null)
             row(fuel, "", String.format(Locale.JAPAN, "%.2f L・¥%,.0f", last.liters, last.cost));
-        if (store.fills.isEmpty())
+        if (store.fills.isEmpty()) {
             fuel.addView(text("「給油」から記録を追加してください", 13, GRAY));
+        } else {
+            LocalDate now = LocalDate.now();
+            FuelStats.Period m = FuelStats.find(store.fills, true, now.toString().substring(0, 7));
+            FuelStats.Period y = FuelStats.find(store.fills, false, String.valueOf(now.getYear()));
+            row(fuel, "今月の給油", String.format(Locale.JAPAN, "%.2f L ・ ¥%,.0f", m.liters, m.cost));
+            row(fuel, "今年の給油", String.format(Locale.JAPAN, "%.2f L ・ ¥%,.0f", y.liters, y.cost));
+        }
 
         // ---- maintenance card ----
         LinearLayout svc = card("メンテナンス", () -> openLog(LogActivity.MODE_SERVICE));
