@@ -58,11 +58,19 @@ public class SettingsActivity extends ThemedActivity {
         content.removeAllViews();
 
         header("車両");
+        note("長押ししてドラッグすると、車両の並び順を変更できます。");
+        final LinearLayout vehBox = new LinearLayout(this);
+        vehBox.setOrientation(LinearLayout.VERTICAL);
+        content.addView(vehBox, new LinearLayout.LayoutParams(-1, -2));
+        rowTarget = vehBox;
         for (Vehicle v : store.vehicles) {
             String sub = v.subtitle();
-            row(v.name, sub, v.owned ? TEXT : GRAY, () -> editVehicle(v),
+            View r = row(v.name, sub, v.owned ? TEXT : GRAY, () -> editVehicle(v),
                     Avatar.view(this, v.name, v.photo, v.icon, 52, false, pal));
+            r.setTag(v.id);
+            enableDragReorder(r, vehBox);
         }
+        rowTarget = null;
         addButton("＋ 車両を追加", () -> editVehicle(null));
 
         header("整備項目");
@@ -226,6 +234,72 @@ public class SettingsActivity extends ThemedActivity {
 
     // ---- vehicles ----
 
+    /** Long-press a vehicle row, then drag it up or down; the new order is saved when dropped. */
+    private void enableDragReorder(final View row, final LinearLayout box) {
+        row.setOnLongClickListener(v -> {
+            v.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS);
+            v.startDragAndDrop(null, new View.DragShadowBuilder(v), v, 0);
+            return true;
+        });
+        row.setOnDragListener((target, e) -> {
+            final View dragged = (View) e.getLocalState();
+            switch (e.getAction()) {
+                case android.view.DragEvent.ACTION_DRAG_STARTED:
+                    if (target == dragged) dragged.setAlpha(0.4f);
+                    return dragged != null && dragged.getParent() == box;
+                case android.view.DragEvent.ACTION_DRAG_ENTERED:
+                    if (target != dragged) {
+                        int to = box.indexOfChild(target);
+                        box.removeView(dragged);
+                        box.addView(dragged, to);
+                    }
+                    return true;
+                case android.view.DragEvent.ACTION_DRAG_ENDED:
+                    if (target == dragged) {
+                        dragged.setAlpha(1f);
+                        List<String> ids = new ArrayList<>();
+                        for (int i = 0; i < box.getChildCount(); i++) ids.add((String) box.getChildAt(i).getTag());
+                        store.reorderVehicles(ids);
+                    }
+                    return true;
+                default:
+                    return true;
+            }
+        });
+    }
+
+    /** A labelled date button with a clear button; the chosen date (yyyy-MM-dd or "") lives in val[0]. */
+    private void dateRow(LinearLayout box, String label, final String[] val) {
+        Ui.label(this, box, label);
+        LinearLayout r = new LinearLayout(this);
+        r.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        final Button b = new Button(this);
+        pill(b, false);
+        b.setText(val[0].isEmpty() ? "未設定" : val[0]);
+        Button x = new Button(this);
+        x.setText("×");
+        pill(x, false);
+        b.setOnClickListener(vw -> {
+            LocalDate d = LocalDate.now();
+            try {
+                if (!val[0].isEmpty()) d = LocalDate.parse(val[0]);
+            } catch (Exception ignored) { }
+            new android.app.DatePickerDialog(this, (dp, y, m, dd) -> {
+                val[0] = LocalDate.of(y, m + 1, dd).toString();
+                b.setText(val[0]);
+            }, d.getYear(), d.getMonthValue() - 1, d.getDayOfMonth()).show();
+        });
+        x.setOnClickListener(vw -> {
+            val[0] = "";
+            b.setText("未設定");
+        });
+        LinearLayout.LayoutParams bl = new LinearLayout.LayoutParams(0, dp(44), 1f);
+        bl.rightMargin = dp(8);
+        r.addView(b, bl);
+        r.addView(x, new LinearLayout.LayoutParams(dp(56), dp(44)));
+        box.addView(r);
+    }
+
     private void showPhoto() {
         photoBox.removeAllViews();
         String p = pendingPhoto != null ? pendingPhoto : photoVehicle.photo;
@@ -320,10 +394,19 @@ public class SettingsActivity extends ThemedActivity {
         EditText plate = Ui.field(this, box, "ナンバー", v.plate, InputType.TYPE_CLASS_TEXT);
         EditText vin = Ui.field(this, box, "VIN(車台番号)", v.vin,
                 InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS);
+        final String[] acquired = { v.acquired };
+        final String[] released = { v.released };
+        dateRow(box, "購入日", acquired);
         CheckBox owned = new CheckBox(this);
         owned.setText("現在所有している");
         owned.setChecked(v.owned);
         box.addView(owned);
+        final LinearLayout releasedBox = new LinearLayout(this);
+        releasedBox.setOrientation(LinearLayout.VERTICAL);
+        dateRow(releasedBox, "手放した日", released);
+        releasedBox.setVisibility(v.owned ? View.GONE : View.VISIBLE);
+        box.addView(releasedBox);
+        owned.setOnCheckedChangeListener((cb, on) -> releasedBox.setVisibility(on ? View.GONE : View.VISIBLE));
 
         ScrollView sv = new ScrollView(this);
         sv.addView(box);
@@ -371,6 +454,8 @@ public class SettingsActivity extends ThemedActivity {
             v.plate = plate.getText().toString().trim();
             v.vin = vin.getText().toString().trim();
             v.owned = owned.isChecked();
+            v.acquired = acquired[0];
+            v.released = v.owned ? "" : released[0];
             if (pendingPhoto != null) v.photo = pendingPhoto;
             if (pendingIcon != null) v.icon = pendingIcon;
             if (edit == null) store.addVehicle(v); else store.save();
@@ -463,11 +548,13 @@ public class SettingsActivity extends ThemedActivity {
         content.addView(t);
     }
 
-    private void row(String title, String sub, int color, Runnable onTap) {
-        row(title, sub, color, onTap, null);
+    private LinearLayout rowTarget;   // where row() puts the view; null = content
+
+    private View row(String title, String sub, int color, Runnable onTap) {
+        return row(title, sub, color, onTap, null);
     }
 
-    private void row(String title, String sub, int color, Runnable onTap, View lead) {
+    private View row(String title, String sub, int color, Runnable onTap, View lead) {
         LinearLayout r = new LinearLayout(this);
         r.setGravity(android.view.Gravity.CENTER_VERTICAL);
         LinearLayout col = new LinearLayout(this);
@@ -499,7 +586,8 @@ public class SettingsActivity extends ThemedActivity {
         }
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
         lp.bottomMargin = dp(6);
-        content.addView(r, lp);
+        (rowTarget != null ? rowTarget : content).addView(r, lp);
+        return r;
     }
 
     private void addButton(String label, Runnable onTap) {

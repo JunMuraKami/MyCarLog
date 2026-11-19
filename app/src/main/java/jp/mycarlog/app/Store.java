@@ -87,6 +87,19 @@ public class Store {
 
     // ---- vehicles ----
 
+    /** Puts the vehicles in the given id order (ids not listed keep their relative order at the end). */
+    public void reorderVehicles(List<String> ids) {
+        List<Vehicle> sorted = new ArrayList<>();
+        for (String id : ids) {
+            Vehicle v = vehicle(id);
+            if (v != null && !sorted.contains(v)) sorted.add(v);
+        }
+        for (Vehicle v : vehicles) if (!sorted.contains(v)) sorted.add(v);
+        vehicles.clear();
+        vehicles.addAll(sorted);
+        save();
+    }
+
     public Vehicle vehicle(String id) {
         for (Vehicle v : vehicles) if (v.id.equals(id)) return v;
         return null;

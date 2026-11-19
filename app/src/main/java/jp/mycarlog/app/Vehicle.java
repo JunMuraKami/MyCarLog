@@ -2,6 +2,8 @@ package jp.mycarlog.app;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import java.time.LocalDate;
+import java.time.Period;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -23,6 +25,8 @@ public class Vehicle {
     public String plate = "";    // ナンバー
     public String vin = "";      // 車台番号
     public boolean owned = true; // 現在所有中
+    public String acquired = ""; // 購入日 yyyy-MM-dd, "" = not set
+    public String released = ""; // 手放した日 yyyy-MM-dd, "" = not set
     public String icon = "";     // preset icon id (see Avatar.ICON_IDS), used when there is no photo
     public String photo = "";    // アイコン写真(base64 JPEG), "" = not set
 
@@ -45,14 +49,51 @@ public class Vehicle {
         List<String> lines = new ArrayList<>();
         if (!a.isEmpty()) lines.add(String.join(" ", a));
         if (!b.isEmpty()) lines.add(String.join(" ・ ", b));
+        String own = ownership();
+        if (!own.isEmpty()) lines.add(own);
         return String.join("\n", lines);
+    }
+
+    private static LocalDate date(String s) {
+        try {
+            return s == null || s.isEmpty() ? null : LocalDate.parse(s);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static String ymd(LocalDate d) {
+        return String.format(Locale.JAPAN, "%04d/%02d/%02d", d.getYear(), d.getMonthValue(), d.getDayOfMonth());
+    }
+
+    /** e.g. "所有期間: 2021/04/12 〜 2026/03/05(4年11ヶ月)", or "" when no dates are set. */
+    public String ownership() {
+        LocalDate from = date(acquired);
+        LocalDate to = owned ? null : date(released);
+        if (from == null && to == null) return "";
+        StringBuilder sb = new StringBuilder("所有期間: ");
+        if (from != null) sb.append(ymd(from));
+        sb.append(" 〜 ");
+        if (to != null) sb.append(ymd(to)); else if (owned) sb.append("現在");
+        if (from != null && (to != null || owned)) {
+            LocalDate end = to != null ? to : LocalDate.now();
+            if (!end.isBefore(from)) {
+                Period p = Period.between(from, end);
+                int months = p.getYears() * 12 + p.getMonths();
+                String len = months < 1 ? "1ヶ月未満"
+                        : (months >= 12 ? months / 12 + "年" : "")
+                        + (months % 12 > 0 ? months % 12 + "ヶ月" : "");
+                sb.append("(").append(len).append(")");
+            }
+        }
+        return sb.toString();
     }
 
     public JSONObject toJson() throws JSONException {
         return new JSONObject().put("id", id).put("name", name)
                 .put("make", make).put("model", model).put("grade", grade)
                 .put("year", year).put("fuelType", fuelType).put("tank", tank)
-                .put("plate", plate).put("vin", vin).put("owned", owned).put("photo", photo).put("icon", icon);
+                .put("plate", plate).put("vin", vin).put("owned", owned).put("photo", photo).put("icon", icon).put("acquired", acquired).put("released", released);
     }
 
     public static Vehicle fromJson(JSONObject o) throws JSONException {
@@ -68,6 +109,8 @@ public class Vehicle {
         v.owned = o.optBoolean("owned", true);
         v.photo = o.optString("photo", "");
         v.icon = o.optString("icon", "");
+        v.acquired = o.optString("acquired", "");
+        v.released = o.optString("released", "");
         return v;
     }
 }
