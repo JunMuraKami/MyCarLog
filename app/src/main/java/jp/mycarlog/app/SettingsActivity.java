@@ -63,7 +63,7 @@ public class SettingsActivity extends ThemedActivity {
         }
         addButton("＋ 車両を追加", () -> editVehicle(null));
 
-        header("メンテナンス項目");
+        header("整備項目");
         note("記録を追加するときに選べる項目と、その標準の次回予定です。");
         for (ServiceType t : store.types) row(t.name, t.summary(), TEXT, () -> editType(t));
         addButton("＋ 項目を追加", () -> editType(null));
@@ -77,7 +77,7 @@ public class SettingsActivity extends ThemedActivity {
         addButton("更新を確認", this::checkUpdate);
 
         header("データ");
-        note("車両・給油・メンテナンス・項目設定のすべてをファイルに書き出し/読み込みします。");
+        note("車両・給油・整備・項目設定のすべてをファイルに書き出し/読み込みします。");
         addButton("エクスポート(ファイルに保存)", () -> {
             Intent i = new Intent(Intent.ACTION_CREATE_DOCUMENT)
                     .addCategory(Intent.CATEGORY_OPENABLE).setType("application/json")
@@ -194,7 +194,7 @@ public class SettingsActivity extends ThemedActivity {
         new AlertDialog.Builder(this)
                 .setTitle("インポート")
                 .setMessage("車両 " + o.optJSONArray("vehicles").length() + " 台、給油 "
-                        + o.optJSONArray("fills").length() + " 件、メンテナンス "
+                        + o.optJSONArray("fills").length() + " 件、整備 "
                         + o.optJSONArray("services").length() + " 件を読み込みます。\n"
                         + "現在のデータはすべて置き換えられます。元に戻せません。")
                 .setNegativeButton("キャンセル", null)
@@ -250,7 +250,7 @@ public class SettingsActivity extends ThemedActivity {
         if (edit != null && store.vehicles.size() > 1)
             d.setNeutralButton("削除", (x, w) -> new AlertDialog.Builder(this)
                     .setTitle("「" + edit.name + "」を削除")
-                    .setMessage("この車両の給油・メンテナンスの記録もすべて削除されます。元に戻せません。")
+                    .setMessage("この車両の給油・整備の記録もすべて削除されます。元に戻せません。")
                     .setNegativeButton("キャンセル", null)
                     .setPositiveButton("削除", (y, z) -> {
                         store.deleteVehicle(edit.id);

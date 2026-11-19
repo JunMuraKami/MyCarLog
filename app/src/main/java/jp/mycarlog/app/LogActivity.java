@@ -34,7 +34,7 @@ public class LogActivity extends ThemedActivity {
         super.onCreate(b);
         mode = getIntent().getIntExtra(EXTRA_MODE, MODE_FUEL);
         store = new Store(this);
-        setTitle((mode == MODE_FUEL ? "給油ログ" : "メンテナンスログ") + " - " + store.vehicle().name);
+        setTitle((mode == MODE_FUEL ? "給油ログ" : "整備ログ") + " - " + store.vehicle().name);
         final int pad = dp(16);
 
         LinearLayout root = new LinearLayout(this);
@@ -106,7 +106,7 @@ public class LogActivity extends ThemedActivity {
         root.addView(list, new LinearLayout.LayoutParams(-1, 0, 1f));
 
         Button add = new Button(this);
-        add.setText(mode == MODE_FUEL ? "＋ 給油を記録" : "＋ メンテナンスを記録");
+        add.setText(mode == MODE_FUEL ? "＋ 給油を記録" : "＋ 整備を記録");
         add.setTextSize(16);
         pill(add, true);
         add.setOnClickListener(v -> {
@@ -364,7 +364,7 @@ public class LogActivity extends ThemedActivity {
             public void onNothingSelected(AdapterView<?> p) { }
         });
 
-        showDialog(edit == null ? "メンテナンスを記録" : "メンテナンスを編集", box,
+        showDialog(edit == null ? "整備を記録" : "整備を編集", box,
                 edit == null ? null : () -> store.remove(edit),
                 () -> {
                     double o = Double.parseDouble(odo.getText().toString());

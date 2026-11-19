@@ -51,7 +51,7 @@ public class MainActivity extends ThemedActivity {
         LinearLayout.LayoutParams b2 = new LinearLayout.LayoutParams(0, dp(56), 1f);
         b2.leftMargin = dp(6);
         bar.addView(navButton("給油", LogActivity.MODE_FUEL), b1);
-        bar.addView(navButton("メンテナンス", LogActivity.MODE_SERVICE), b2);
+        bar.addView(navButton("整備", LogActivity.MODE_SERVICE), b2);
         root.addView(bar);
 
         setContentView(screen(false, R.drawable.ic_settings, "設定",
@@ -193,11 +193,11 @@ public class MainActivity extends ThemedActivity {
         }
 
         // ---- maintenance card ----
-        LinearLayout svc = card("メンテナンス", () -> openLog(LogActivity.MODE_SERVICE));
+        LinearLayout svc = card("整備", () -> openLog(LogActivity.MODE_SERVICE));
         svc.addView(text(String.format(Locale.JAPAN, "現在の走行距離: %,.0f km", store.currentOdo()), 13, GRAY));
         List<Store.Due> due = store.dueItems(LocalDate.now());
         if (due.isEmpty())
-            svc.addView(text("「メンテナンス」から記録を追加すると次回予定が表示されます", 13, GRAY));
+            svc.addView(text("「整備」から記録を追加すると次回予定が表示されます", 13, GRAY));
         for (Store.Due d : due) {
             int color = d.level == 2 ? RED : d.level == 1 ? ORANGE : TEXT;
             String tag = d.level == 2 ? "超過" : d.level == 1 ? "まもなく" : "";
