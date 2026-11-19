@@ -85,7 +85,18 @@ public class SettingsActivity extends Activity {
                     .addCategory(Intent.CATEGORY_OPENABLE).setType("*/*");
             startActivityForResult(i, REQ_IMPORT);
         });
+
+        header("GitHub");
+        row("MyCarLog", GITHUB_URL, 0xFF1976D2, () -> {
+            try {
+                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(GITHUB_URL)));
+            } catch (Exception e) {
+                Toast.makeText(this, "ブラウザを開けませんでした", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
+
+    private static final String GITHUB_URL = "https://github.com/JunMuraKami/MyCarLog";
 
     // ---- app update ----
 
