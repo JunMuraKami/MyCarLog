@@ -101,6 +101,13 @@ public class SettingsActivity extends Activity {
         glp.gravity = android.view.Gravity.CENTER_HORIZONTAL;
         glp.topMargin = dp(20);
         content.addView(gh, glp);
+        TextView ghNote = new TextView(this);
+        ghNote.setText("最新版のダウンロード、更新履歴、READMEは\nGitHubで確認できます。");
+        ghNote.setTextSize(12);
+        ghNote.setTextColor(GRAY);
+        ghNote.setGravity(android.view.Gravity.CENTER);
+        ghNote.setPadding(dp(4), 0, dp(4), dp(8));
+        content.addView(ghNote, new LinearLayout.LayoutParams(-1, -2));
     }
 
     private static final String GITHUB_URL = "https://github.com/JunMuraKami/MyCarLog";
