@@ -10,6 +10,7 @@
 </p>
 <p>
 <img src="docs/screenshots/maintenance-log.jpg" width="240" alt="整備ログ">
+<img src="docs/screenshots/expense-log.jpg" width="240" alt="費用ログ">
 <img src="docs/screenshots/settings.jpg" width="240" alt="設定">
 </p>
 
