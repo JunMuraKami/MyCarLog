@@ -3,16 +3,7 @@
 給油・燃費・整備を記録する、Android 向けのシンプルな車両管理アプリです。
 
 ## スクリーンショット
-<p>
-<img src="docs/screenshots/home-yaris.jpg" width="240" alt="ホーム">
-<img src="docs/screenshots/home-roadster.jpg" width="240" alt="ホーム(2台目)">
-<img src="docs/screenshots/fuel-log.jpg" width="240" alt="給油ログ">
-</p>
-<p>
-<img src="docs/screenshots/maintenance-log.jpg" width="240" alt="整備ログ">
-<img src="docs/screenshots/expense-log.jpg" width="240" alt="費用ログ">
-<img src="docs/screenshots/settings.jpg" width="240" alt="設定">
-</p>
+<img src="docs/screenshots-grid.jpg" width="720" alt="スクリーンショット(ホーム・給油ログ・整備ログ・費用ログ・設定)">
 
 ## 機能
 - 給油記録と燃費計算(満タン〜満タン方式)
